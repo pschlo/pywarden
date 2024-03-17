@@ -1,10 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import TypedDict, Any, Generic, TypeVar, cast, TypeGuard, Type
+from typing import TypedDict, Any, Generic, TypeVar, cast, TypeGuard, Type, NotRequired
 
 
 class Item(TypedDict):
   id: str
+  object: str
   organizationId: str
   collectionIds: list[str]
   folderId: str

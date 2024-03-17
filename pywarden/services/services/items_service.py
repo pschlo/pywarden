@@ -9,7 +9,14 @@ from ..service import Service
 class ItemsService(Service):
   def getAll(self) -> GetAllResponse:
     resp = self.server.get('/list/object/items')
-    return resp.json()
+    json = resp.json()
+
+    if json['success']:
+      items = json['data']['data']
+      for item in items:
+        fix_item(item)
+
+    return json
 
   def deleteItem(self, id: str) -> DeleteItemResponse:
     resp = self.server.delete(f'/object/item/{id}')
@@ -17,7 +24,19 @@ class ItemsService(Service):
   
   def getItem(self, id: str) -> GetItemResponse:
     resp = self.server.get(f'/object/item/{id}')
-    return resp.json()
+    json = resp.json()
+
+    if json['success']:
+      item = json['data']
+      fix_item(item)
+
+    return json
+  
+
+def fix_item(item):
+  # ensure that attachments key is always set
+  if 'attachments' not in item:
+    item['attachments'] = []
 
 
 class GetAllResponse(TypedDict):
