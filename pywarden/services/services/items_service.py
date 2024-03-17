@@ -9,11 +9,7 @@ from ..service import Service
 class ItemsService(Service):
   def getAll(self) -> GetAllResponse:
     resp = self.server.get('/list/object/items')
-    json = resp.json()
-    return {
-      'success': json['success'],
-      'items': json['data']['data']
-    }
+    return resp.json()
 
   def deleteItem(self, id: str) -> DeleteItemResponse:
     resp = self.server.delete(f'/object/item/{id}')
@@ -24,10 +20,13 @@ class ItemsService(Service):
     return resp.json()
 
 
-
 class GetAllResponse(TypedDict):
   success: bool
-  items: list[Item]
+  data: GetAllResponseData
+
+class GetAllResponseData(TypedDict):
+  object: str
+  data: list[Item]
 
 class DeleteItemResponse(TypedDict):
   success: bool

@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from typing import TypedDict, Any, Generic, TypeVar, cast, TypeGuard, Type
 
 
-
-
 class Item(TypedDict):
   id: str
   organizationId: str

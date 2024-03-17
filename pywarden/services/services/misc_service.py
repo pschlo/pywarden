@@ -5,13 +5,31 @@ from ..service import Service
 
 
 class MiscService(Service):
-  def sync(self) -> Any:
+  def sync(self) -> SyncResponse:
     resp = self.server.post('/sync')
-    json = resp.json()
-    return {
-      'success': json['success']
-    }
+    return resp.json()
   
-  def status(self) -> Any:
+  def status(self) -> StatusResponse:
     resp = self.server.get('/status')
     return resp.json()
+
+
+class SyncResponse(TypedDict):
+  success: bool
+  data: Any
+
+
+class StatusResponse(TypedDict):
+  success: bool
+  data: StatusResponseData
+
+class StatusResponseData(TypedDict):
+  object: str
+  template: StatusResponseDataTemplate
+
+class StatusResponseDataTemplate(TypedDict):
+  serverUrl: str
+  lastSync: str
+  userEmail: str
+  userID: str
+  status: str
