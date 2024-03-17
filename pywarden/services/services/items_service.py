@@ -1,14 +1,14 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import TypedDict, Any, Generic, TypeVar, cast, TypeGuard, Type
+from typing import TypedDict, Any
 
-from pywarden.items import Item, is_item_type, LoginItem, CardItem, SecureNoteItem, IdentityItem
+from pywarden.items import Item
 from ..service import Service
 
 
 class ItemsService(Service):
   def getAll(self) -> GetAllResponse:
-    resp = self.server.get('/list/object/items')
+    resp = self.api.get('/list/object/items')
     json = resp.json()
 
     if json['success']:
@@ -19,11 +19,11 @@ class ItemsService(Service):
     return json
 
   def deleteItem(self, id: str) -> DeleteItemResponse:
-    resp = self.server.delete(f'/object/item/{id}')
+    resp = self.api.delete(f'/object/item/{id}')
     return resp.json()
   
   def getItem(self, id: str) -> GetItemResponse:
-    resp = self.server.get(f'/object/item/{id}')
+    resp = self.api.get(f'/object/item/{id}')
     json = resp.json()
 
     if json['success']:

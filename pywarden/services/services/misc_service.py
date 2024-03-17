@@ -6,11 +6,11 @@ from ..service import Service
 
 class MiscService(Service):
   def sync(self) -> SyncResponse:
-    resp = self.server.post('/sync')
+    resp = self.api.post('/sync')
     return resp.json()
   
   def status(self) -> StatusResponse:
-    resp = self.server.get('/status')
+    resp = self.api.get('/status')
     return resp.json()
 
 
