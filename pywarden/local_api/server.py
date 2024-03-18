@@ -10,11 +10,10 @@ import time
 import requests
 import math
 
-from .bitwarden_cli import BitwardenCli
-from .active_local_api_server import ActiveLocalApiServer
-from .cli_responses import StatusResponse, AuthenticatedStatusResponse
-from .local_api_config import LocalApiConfig
-from .login_credentials import LoginCredentials
+from pywarden.cli import Cli, StatusResponse, AuthenticatedStatusResponse
+from pywarden.api import LoginCredentials
+from .active_server import ActiveApiServer
+from .config import ApiConfig
 
 
 TIMEOUT_SECS = 10
@@ -28,13 +27,13 @@ Upon creation, ensures that:
   - vault is unlocked
 The session token is then used to serve the API.
 """
-class LocalApiServer(ContextManager):
-  config: LocalApiConfig
-  cli: BitwardenCli
-  active_server: ActiveLocalApiServer | None = None
+class ApiServer(ContextManager):
+  config: ApiConfig
+  cli: Cli
+  active_server: ActiveApiServer | None = None
 
 
-  def __init__(self, config: LocalApiConfig, cli: BitwardenCli, master_password: str, credentials: LoginCredentials|None = None) -> None:
+  def __init__(self, config: ApiConfig, cli: Cli, master_password: str, credentials: LoginCredentials|None = None) -> None:
     self.config = config
     self.cli = cli
     self.login(credentials)
@@ -66,7 +65,7 @@ class LocalApiServer(ContextManager):
     print("Unlocking vault")
     self.cli.unlock(password)
 
-  def __enter__(self) -> ActiveLocalApiServer:
+  def __enter__(self) -> ActiveApiServer:
     self.active_server = self.create()
     return self.active_server
   
@@ -75,20 +74,19 @@ class LocalApiServer(ContextManager):
     self.active_server.shutdown()
 
 
-  def create(self) -> ActiveLocalApiServer:
+  def create(self) -> ActiveApiServer:
     print("Preparing API Server")
 
-    command = ['serve', '--port', str(self.config.port), '--hostname', self.config.hostname]
-    process = self.cli.run_background_command(command)
-    active_server = ActiveLocalApiServer(process, config=self.config, cli=self.cli)
-    LocalApiServer.wait_until_ready(active_server)
+    process = self.cli.serve_api(port=self.config.port, host=self.config.hostname)
+    active_server = ActiveApiServer(process, config=self.config, cli=self.cli)
+    ApiServer.wait_until_ready(active_server)
 
     print(f"Now serving Vault Management API on port {self.config.port}")
     return active_server
   
 
   @staticmethod
-  def wait_until_ready(server: ActiveLocalApiServer):
+  def wait_until_ready(server: ActiveApiServer):
     success = False
     t0 = time.perf_counter()
     

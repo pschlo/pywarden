@@ -9,15 +9,15 @@ class AttachmentsService(Service):
     files = {
       'file': (name, content)
     }
-    resp = self.api.post('/attachment', params={'itemid': item_id}, files=files)
+    resp = self.conn.post('/attachment', params={'itemid': item_id}, files=files)
     return resp.json()
 
   def get_attachment(self, item_id: str, attachment_id: str) -> bytes:
-    resp = self.api.get(f'/object/attachment/{attachment_id}', params={'itemid': item_id})
+    resp = self.conn.get(f'/object/attachment/{attachment_id}', params={'itemid': item_id})
     return resp.content
   
   def delete_attachment(self, item_id: str, attachment_id: str) -> DeleteAttachmentResponse:
-    resp = self.api.delete(f'/object/attachment/{attachment_id}', params={'itemid': item_id})
+    resp = self.conn.delete(f'/object/attachment/{attachment_id}', params={'itemid': item_id})
     return resp.json()
     
 

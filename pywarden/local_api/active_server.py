@@ -2,9 +2,10 @@ from __future__ import annotations
 from subprocess import Popen
 from typing import Any
 
-from .bitwarden_cli import BitwardenCli
-from .api_connection import ApiConnection
-from .local_api_config import LocalApiConfig
+
+from pywarden.api import ApiConnection
+from pywarden.cli import Cli
+from .config import ApiConfig
 
 
 """
@@ -13,11 +14,11 @@ Things you can do with this object:
   - communicate with the API
   - shut the server down
 """
-class ActiveLocalApiServer(ApiConnection):
+class ActiveApiServer(ApiConnection):
   process: Popen
-  cli: BitwardenCli
+  cli: Cli
 
-  def __init__(self, process: Popen, config: LocalApiConfig, cli: BitwardenCli) -> None:
+  def __init__(self, process: Popen, config: ApiConfig, cli: Cli) -> None:
     super().__init__('http', config.hostname, config.port)
     self.process = process
     self.cli = cli

@@ -8,7 +8,7 @@ from ..service import Service
 
 class ItemsService(Service):
   def getAll(self) -> GetAllResponse:
-    resp = self.api.get('/list/object/items')
+    resp = self.conn.get('/list/object/items')
     json = resp.json()
 
     if json['success']:
@@ -19,11 +19,11 @@ class ItemsService(Service):
     return json
 
   def deleteItem(self, id: str) -> DeleteItemResponse:
-    resp = self.api.delete(f'/object/item/{id}')
+    resp = self.conn.delete(f'/object/item/{id}')
     return resp.json()
   
   def getItem(self, id: str) -> GetItemResponse:
-    resp = self.api.get(f'/object/item/{id}')
+    resp = self.conn.get(f'/object/item/{id}')
     json = resp.json()
 
     if json['success']:

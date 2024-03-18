@@ -17,7 +17,7 @@ from .cli_responses import StatusResponse, AuthenticatedStatusResponse
 Wrapper around Bitwarden CLI.
 Keeps track of logged in/out and vault locked/unlocked state.
 """
-class BitwardenCli:
+class CliConnection:
   path: Path
   _session_key: str | None = None
   is_logged_in: bool
@@ -54,33 +54,3 @@ class BitwardenCli:
 
   def get_status(self) -> StatusResponse:
     return json.loads(self.run_cli_command(['status']).stdout)
-
-  def login(self, email: str, password: str) -> None:
-    if self.run_cli_command(['login', email, password]).returncode > 0:
-      raise RuntimeError(f"Login failed")
-    self.is_logged_in = True
-    
-  def logout(self) -> None:
-    if self.run_cli_command(['logout']).returncode > 0:
-      raise RuntimeError(f"Logout failed")
-    self.is_logged_in = False
-    
-  def lock(self) -> None:
-    r = self.run_cli_command(['lock'])
-    if r.returncode > 0:
-      raise RuntimeError(f"Lock failed")
-    self.session_key = None
-
-  def unlock(self, password: str) -> None:
-    if not password:
-      raise RuntimeError(f"Empty master password")
-    r = self.run_cli_command(['unlock', '--raw', password])
-    if r.returncode > 0:
-      raise RuntimeError(f"Unlock failed")
-    self.session_key = r.stdout
-    
-  def get_export(self) -> str:
-    res = self.run_cli_command(['export', '--format', 'json', '--raw'])
-    if res.returncode > 0:
-      raise RuntimeError(f"Export failed")
-    return res.stdout
