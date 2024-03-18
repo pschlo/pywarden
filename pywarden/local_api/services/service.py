@@ -1,7 +1,7 @@
 from pywarden.api import Service
 from pywarden.cli import Cli
 
-from ..active_server import ActiveApiServer
+from ..local_api import ActiveApiServer
 
 
 

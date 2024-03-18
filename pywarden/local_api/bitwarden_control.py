@@ -11,9 +11,10 @@ import requests
 import math
 
 from pywarden.cli import Cli, StatusResponse, AuthenticatedStatusResponse
-from pywarden.api import LoginCredentials
-from .active_server import ActiveApiServer
-from .config import ApiConfig
+from pywarden.api import LoginCredentials, ApiConnection
+from .local_api import LocalApi
+from .controller import Controller
+from .api_config import ApiConfig
 
 
 TIMEOUT_SECS = 10
@@ -27,10 +28,10 @@ Upon creation, ensures that:
   - vault is unlocked
 The session token is then used to serve the API.
 """
-class ApiServer(ContextManager):
+class BitwardenControl(ContextManager):
   config: ApiConfig
   cli: Cli
-  active_server: ActiveApiServer | None = None
+  active_control: Controller | None = None
 
 
   def __init__(self, config: ApiConfig, cli: Cli, master_password: str, credentials: LoginCredentials|None = None) -> None:
@@ -65,34 +66,41 @@ class ApiServer(ContextManager):
     print("Unlocking vault")
     self.cli.unlock(password)
 
-  def __enter__(self) -> ActiveApiServer:
-    self.active_server = self.create()
-    return self.active_server
+  def __enter__(self) -> Controller:
+    self.active_control = self.create()
+    return self.active_control
   
   def __exit__(self, typ, val, tb) -> None:
-    assert self.active_server is not None
-    self.active_server.shutdown()
+    assert self.active_control is not None
+    self.active_control.shutdown()
 
 
-  def create(self) -> ActiveApiServer:
+  def create(self) -> Controller:
     print("Preparing API Server")
 
+    # start the API
     process = self.cli.serve_api(port=self.config.port, host=self.config.hostname)
-    active_server = ActiveApiServer(process, config=self.config, cli=self.cli)
-    ApiServer.wait_until_ready(active_server)
+
+    # create API object
+    conn = ApiConnection('http', port=self.config.port, host=self.config.hostname)
+    api = LocalApi.create(conn, process)
+
+    # create controller
+    controller = Controller(api, self.cli)
+    BitwardenControl.wait_until_ready(controller)
 
     print(f"Now serving Vault Management API on port {self.config.port}")
-    return active_server
+    return controller
   
 
   @staticmethod
-  def wait_until_ready(server: ActiveApiServer):
+  def wait_until_ready(controller: Controller):
     success = False
     t0 = time.perf_counter()
     
     while time.perf_counter() - t0 < TIMEOUT_SECS:
       try:
-        server.get('/status')
+        controller.api.status()
         success = True
         break
       except requests.ConnectionError:
@@ -102,5 +110,5 @@ class ApiServer(ContextManager):
       time.sleep(0.1)
 
     if not success:
-      server.shutdown()
+      controller.shutdown()
       raise TimeoutError(f"API server failed to start after {TIMEOUT_SECS} seconds")
