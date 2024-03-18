@@ -13,7 +13,6 @@ import math
 from pywarden.cli import Cli, StatusResponse, AuthenticatedStatusResponse
 from pywarden.api import LoginCredentials, ApiConnection
 from .local_api import LocalApi
-from .controller import Controller
 from .api_config import ApiConfig
 
 
@@ -30,8 +29,8 @@ The session token is then used to serve the API.
 """
 class BitwardenControl(ContextManager):
   config: ApiConfig
+  api: LocalApi
   cli: Cli
-  active_control: Controller | None = None
 
 
   def __init__(self, config: ApiConfig, cli: Cli, master_password: str, credentials: LoginCredentials|None = None) -> None:
@@ -39,6 +38,15 @@ class BitwardenControl(ContextManager):
     self.cli = cli
     self.login(credentials)
     self.unlock(master_password)
+
+     # start the API
+    process = self.cli.serve_api(port=self.config.port, host=self.config.hostname)
+
+    # create API object
+    conn = ApiConnection('http', port=self.config.port, host=self.config.hostname)
+    self.api = LocalApi.create(conn, process)
+
+    self.api.wait_until_ready()
 
   def login(self, credentials: LoginCredentials|None) -> None:
     print("Checking status")
@@ -66,49 +74,23 @@ class BitwardenControl(ContextManager):
     print("Unlocking vault")
     self.cli.unlock(password)
 
-  def __enter__(self) -> Controller:
-    self.active_control = self.create()
-    return self.active_control
+  def __enter__(self) -> BitwardenControl:
+    return self
   
   def __exit__(self, typ, val, tb) -> None:
-    assert self.active_control is not None
-    self.active_control.shutdown()
+    self.shutdown()
 
+  def wait_until_ready(self):
+    try:
+      self.api.wait_until_ready()
+    except TimeoutError:
+      self.shutdown()
 
-  def create(self) -> Controller:
-    print("Preparing API Server")
-
-    # start the API
-    process = self.cli.serve_api(port=self.config.port, host=self.config.hostname)
-
-    # create API object
-    conn = ApiConnection('http', port=self.config.port, host=self.config.hostname)
-    api = LocalApi.create(conn, process)
-
-    # create controller
-    controller = Controller(api, self.cli)
-    BitwardenControl.wait_until_ready(controller)
-
-    print(f"Now serving Vault Management API on port {self.config.port}")
-    return controller
-  
-
-  @staticmethod
-  def wait_until_ready(controller: Controller):
-    success = False
-    t0 = time.perf_counter()
-    
-    while time.perf_counter() - t0 < TIMEOUT_SECS:
-      try:
-        controller.api.status()
-        success = True
-        break
-      except requests.ConnectionError:
-        pass
-      except requests.RequestException:
-        break
-      time.sleep(0.1)
-
-    if not success:
-      controller.shutdown()
-      raise TimeoutError(f"API server failed to start after {TIMEOUT_SECS} seconds")
+  def shutdown(self) -> None:
+    print(f"Shutting down Bitwarden Control")
+    print(f"  Stopping API")
+    self.api.shutdown()
+    print(f"  Locking vault")
+    self.cli.lock()
+    print(f"  Logging out")
+    self.cli.logout()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from subprocess import Popen
 from typing import Any, override
+import time
 
 
 from pywarden.api import Api, ApiConnection
@@ -11,6 +12,7 @@ from pywarden.cli import Cli
 from .api_config import ApiConfig
 
 
+TIMEOUT_SECS = 10
 
 
 
@@ -36,7 +38,18 @@ class LocalApi(Api):
       items = ItemsService(conn),
       misc = MiscService(conn)
     )
-    
+
 
   def shutdown(self):
     self.process.terminate()
+
+
+  def wait_until_ready(self):
+    t0 = time.perf_counter()
+    
+    while time.perf_counter() - t0 < TIMEOUT_SECS:
+      if self.is_reachable():
+        break
+      time.sleep(0.1)
+    else:
+      raise TimeoutError(f"API server failed to start after {TIMEOUT_SECS} seconds")

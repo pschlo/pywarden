@@ -1,4 +1,6 @@
 from __future__ import annotations
+import requests
+
 from .services import AttachmentsService, ItemsService, MiscService
 from .connection import ApiConnection
 
@@ -33,6 +35,10 @@ class Api:
       items = ItemsService(conn),
       misc = MiscService(conn)
     )
-
-
-
+  
+  def is_reachable(self) -> bool:
+    try:
+      self.status()
+      return True
+    except requests.ConnectionError:
+      return False
