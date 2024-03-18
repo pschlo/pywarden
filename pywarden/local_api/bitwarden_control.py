@@ -16,10 +16,6 @@ from .local_api import LocalApi
 from .api_config import ApiConfig
 
 
-TIMEOUT_SECS = 10
-
-
-
 
 """
 Upon creation, ensures that:
@@ -46,7 +42,7 @@ class BitwardenControl(ContextManager):
     conn = ApiConnection('http', port=self.config.port, host=self.config.hostname)
     self.api = LocalApi.create(conn, process)
 
-    self.api.wait_until_ready()
+    self.wait_until_ready(self.config.startup_timeout_secs)
 
   def login(self, credentials: LoginCredentials|None) -> None:
     print("Checking status")
@@ -80,11 +76,12 @@ class BitwardenControl(ContextManager):
   def __exit__(self, typ, val, tb) -> None:
     self.shutdown()
 
-  def wait_until_ready(self):
+  def wait_until_ready(self, timeout_secs: float):
     try:
-      self.api.wait_until_ready()
+      self.api.wait_until_ready(timeout_secs)
     except TimeoutError:
       self.shutdown()
+      raise
 
   def shutdown(self) -> None:
     print(f"Shutting down Bitwarden Control")

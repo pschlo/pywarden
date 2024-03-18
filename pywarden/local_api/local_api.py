@@ -12,9 +12,6 @@ from pywarden.cli import Cli
 from .api_config import ApiConfig
 
 
-TIMEOUT_SECS = 10
-
-
 
 """
 Represents a running instance of a local Bitwarden Vault Management API server.
@@ -44,12 +41,12 @@ class LocalApi(Api):
     self.process.terminate()
 
 
-  def wait_until_ready(self):
+  def wait_until_ready(self, timeout_secs: float):
     t0 = time.perf_counter()
     
-    while time.perf_counter() - t0 < TIMEOUT_SECS:
+    while time.perf_counter() - t0 < timeout_secs:
       if self.is_reachable():
         break
       time.sleep(0.1)
     else:
-      raise TimeoutError(f"API server failed to start after {TIMEOUT_SECS} seconds")
+      raise TimeoutError(f"API server failed to start after {timeout_secs} seconds")
