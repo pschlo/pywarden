@@ -4,11 +4,11 @@ from typing import Any, override
 import time
 
 
-from pywarden.api import Api, ApiConnection
+from pywarden.api import ApiControl, ApiConnection
 from pywarden.api.services.services.attachments_service import AttachmentsService
 from pywarden.api.services.services.items_service import ItemsService
 from pywarden.api.services.services.misc_service import MiscService
-from pywarden.cli import Cli
+from pywarden.cli import CliControl
 from .api_config import ApiConfig
 
 
@@ -19,7 +19,7 @@ Things you can do with this object:
   - communicate with the API
   - shut the server down
 """
-class LocalApi(Api):
+class LocalApiControl(ApiControl):
   process: Popen
 
   def __init__(self, process: Popen, attachments: AttachmentsService, items: ItemsService, misc: MiscService) -> None:
@@ -28,8 +28,8 @@ class LocalApi(Api):
 
   @override
   @staticmethod
-  def create(conn: ApiConnection, process: Popen) -> LocalApi:
-    return LocalApi(
+  def create(conn: ApiConnection, process: Popen) -> LocalApiControl:
+    return LocalApiControl(
       process=process,
       attachments = AttachmentsService(conn),
       items = ItemsService(conn),

@@ -5,7 +5,7 @@ from .services import AttachmentsService, ItemsService, MiscService
 from .connection import ApiConnection
 
 
-class Api:
+class ApiControl:
   def __init__(self,
     attachments: AttachmentsService,
     items: ItemsService,
@@ -29,8 +29,8 @@ class Api:
 
 
   @staticmethod
-  def create(conn: ApiConnection) -> Api:
-    return Api(
+  def create(conn: ApiConnection) -> ApiControl:
+    return ApiControl(
       attachments = AttachmentsService(conn),
       items = ItemsService(conn),
       misc = MiscService(conn)

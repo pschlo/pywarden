@@ -10,10 +10,10 @@ import time
 import requests
 import math
 
-from pywarden.cli import Cli, StatusResponse, AuthenticatedStatusResponse
+from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse
 from pywarden.api import LoginCredentials, ApiConnection
-from .local_api import LocalApi
-from .api_config import ApiConfig
+from ..local_api.control import LocalApiControl
+from ..local_api.api_config import ApiConfig
 
 
 
@@ -25,11 +25,11 @@ The session token is then used to serve the API.
 """
 class BitwardenControl(ContextManager):
   config: ApiConfig
-  api: LocalApi
-  cli: Cli
+  api: LocalApiControl
+  cli: CliControl
 
 
-  def __init__(self, config: ApiConfig, cli: Cli, master_password: str, credentials: LoginCredentials|None = None) -> None:
+  def __init__(self, config: ApiConfig, cli: CliControl, master_password: str, credentials: LoginCredentials|None = None) -> None:
     self.config = config
     self.cli = cli
     self.login(credentials)
@@ -40,7 +40,7 @@ class BitwardenControl(ContextManager):
 
     # create API object
     conn = ApiConnection('http', port=self.config.port, host=self.config.hostname)
-    self.api = LocalApi.create(conn, process)
+    self.api = LocalApiControl.create(conn, process)
 
     self.wait_until_ready(self.config.startup_timeout_secs)
 

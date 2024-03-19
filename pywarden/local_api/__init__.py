@@ -1,4 +1,4 @@
 from .services import *
-from .local_api import *
+from .control import *
 from .api_config import *
-from .bitwarden_control import *
+from ..bitwarden_control.control import *

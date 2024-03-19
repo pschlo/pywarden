@@ -3,7 +3,7 @@ from .services import AuthService, ImportExportService, MiscService, ApiService
 from .connection import CliConnection
 
 
-class Cli:
+class CliControl:
   def __init__(self,
     auth: AuthService,
     import_export: ImportExportService,
@@ -29,8 +29,8 @@ class Cli:
 
 
   @staticmethod
-  def create(conn: CliConnection) -> Cli:
-    return Cli(
+  def create(conn: CliConnection) -> CliControl:
+    return CliControl(
       auth=AuthService(conn),
       import_export=ImportExportService(conn),
       api=ApiService(conn),

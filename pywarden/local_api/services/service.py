@@ -1,7 +1,7 @@
 from pywarden.api import Service
-from pywarden.cli import Cli
+from pywarden.cli import CliControl
 
-from ..local_api import ActiveApiServer
+from ..control import ActiveApiServer
 
 
 
@@ -11,7 +11,7 @@ Represents a service that can:
   - use the local Bitwarden CLI
 """
 class LocalService(Service):
-  cli: Cli
+  cli: CliControl
 
   def __init__(self, api: ActiveApiServer) -> None:
     super().__init__(api)
