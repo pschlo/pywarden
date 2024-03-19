@@ -9,7 +9,7 @@ from pywarden.api.services.services.attachments_service import AttachmentsServic
 from pywarden.api.services.services.items_service import ItemsService
 from pywarden.api.services.services.misc_service import MiscService
 from pywarden.cli import CliControl
-from .api_config import ApiConfig
+from .config import ApiConfig
 
 
 
@@ -35,7 +35,7 @@ class LocalApiControl(ApiControl):
       items = ItemsService(conn),
       misc = MiscService(conn)
     )
-
+  
 
   def shutdown(self):
     self.process.terminate()

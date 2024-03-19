@@ -10,10 +10,10 @@ import time
 import requests
 import math
 
-from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse
+from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliConnection
 from pywarden.api import LoginCredentials, ApiConnection
 from ..local_api.control import LocalApiControl
-from ..local_api.api_config import ApiConfig
+from ..local_api.config import ApiConfig
 
 
 
@@ -24,35 +24,48 @@ Upon creation, ensures that:
 The session token is then used to serve the API.
 """
 class BitwardenControl(ContextManager):
-  config: ApiConfig
   api: LocalApiControl
   cli: CliControl
 
 
-  def __init__(self, config: ApiConfig, cli: CliControl, master_password: str, credentials: LoginCredentials|None = None) -> None:
-    self.config = config
+  def __init__(self, api: LocalApiControl, cli: CliControl) -> None:
+    self.api = api
     self.cli = cli
-    self.login(credentials)
-    self.unlock(master_password)
 
-     # start the API
-    process = self.cli.serve_api(port=self.config.port, host=self.config.hostname)
+    self.wait_until_ready()
+
+
+  @staticmethod
+  def create(api_config: ApiConfig, cli_config: Path, master_password: str, credentials: LoginCredentials|None = None) -> BitwardenControl:
+    # create CLI object
+    conn = CliConnection(cli_config)
+    cli = CliControl.create(conn)
+    
+    # prepare for API
+    BitwardenControl.login(cli, credentials)
+    BitwardenControl.unlock(cli, master_password)
+    
+    # start the API
+    process = cli.serve_api(port=api_config.port, host=api_config.hostname)
 
     # create API object
-    conn = ApiConnection('http', port=self.config.port, host=self.config.hostname)
-    self.api = LocalApiControl.create(conn, process)
+    conn = ApiConnection('http', port=api_config.port, host=api_config.hostname)
+    api = LocalApiControl.create(conn, process)
 
-    self.wait_until_ready(self.config.startup_timeout_secs)
+    return BitwardenControl(api, cli)
 
-  def login(self, credentials: LoginCredentials|None) -> None:
+
+  # TODO: Move to CliControl
+  @staticmethod
+  def login(cli: CliControl, credentials: LoginCredentials|None) -> None:
     print("Checking status")
-    status = self.cli.get_status()
+    status = cli.get_status()
 
     if status['status'] == 'unauthenticated':
       print("Status: Not logged in")
       if credentials is not None:
         print(f"Logging in as {credentials['email']}")
-        self.cli.login(credentials['email'], credentials['password'])
+        cli.login(credentials['email'], credentials['password'])
       else:
         raise RuntimeError(f"Not logged in and no credentials provided")
 
@@ -63,12 +76,14 @@ class BitwardenControl(ContextManager):
       if credentials is not None:
         if status['userEmail'] != credentials['email']:
           print(f"Should be using account '{credentials['email']}', logging out and back in")
-          self.cli.logout()
-          self.login(credentials)
+          cli.logout()
+          BitwardenControl.login(cli, credentials)
 
-  def unlock(self, password: str) -> None:
+
+  @staticmethod
+  def unlock(cli: CliControl, password: str) -> None:
     print("Unlocking vault")
-    self.cli.unlock(password)
+    cli.unlock(password)
 
   def __enter__(self) -> BitwardenControl:
     return self
@@ -76,7 +91,7 @@ class BitwardenControl(ContextManager):
   def __exit__(self, typ, val, tb) -> None:
     self.shutdown()
 
-  def wait_until_ready(self, timeout_secs: float):
+  def wait_until_ready(self, timeout_secs: float = 10):
     try:
       self.api.wait_until_ready(timeout_secs)
     except TimeoutError:
