@@ -8,8 +8,6 @@ from pywarden.api import ApiControl, ApiConnection
 from pywarden.api.services.services.attachments_service import AttachmentsService
 from pywarden.api.services.services.items_service import ItemsService
 from pywarden.api.services.services.misc_service import MiscService
-from pywarden.cli import CliControl
-from .config import ApiConfig
 
 
 

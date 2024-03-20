@@ -10,10 +10,11 @@ import time
 import requests
 import math
 
-from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliConnection, CliConfig
+from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliConnection
 from pywarden.api import LoginCredentials, ApiConnection
-from ..local_api.control import LocalApiControl
-from ..local_api.config import ApiConfig
+from pywarden.local_api import LocalApiControl
+from .local_api_config import ApiConfig
+from .cli_config import CliConfig
 
 
 
@@ -55,7 +56,7 @@ class BitwardenControl(ContextManager):
     return BitwardenControl(api, cli)
 
 
-  # TODO: Move to CliControl
+  # TODO: Move to CliControl or Cli service
   @staticmethod
   def login(cli: CliControl, credentials: LoginCredentials|None) -> None:
     print("Checking status")
