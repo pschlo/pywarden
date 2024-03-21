@@ -3,6 +3,8 @@ import os
 
 from .services import AuthService, ImportExportService, MiscService, ApiService
 from .connection import CliConnection
+from .login_credentials import LoginCredentials
+from .cli_responses import StatusResponse
 
 
 class CliControl:
@@ -52,8 +54,8 @@ class CliControl:
     self.is_logged_in = False if status == 'unauthenticated' else True
 
 
-  def login(self, email: str, password: str):
-    self._auth.login(email, password)
+  def login(self, credentials: LoginCredentials, status: StatusResponse):
+    self._auth.login(credentials, status)
     self.is_logged_in = True
 
   def logout(self):

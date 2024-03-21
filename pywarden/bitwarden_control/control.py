@@ -10,8 +10,8 @@ import time
 import requests
 import math
 
-from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliConnection
-from pywarden.api import LoginCredentials, ApiConnection
+from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliConnection, LoginCredentials
+from pywarden.api import ApiConnection
 from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
 from .cli_config import CliConfig
@@ -37,14 +37,19 @@ class BitwardenControl(ContextManager):
 
 
   @staticmethod
-  def create(api_config: ApiConfig, cli_config: CliConfig, master_password: str, credentials: LoginCredentials|None = None) -> BitwardenControl:
+  def create(api_config: ApiConfig, cli_config: CliConfig, master_password: str, credentials: LoginCredentials) -> BitwardenControl:
     # create CLI object
     conn = CliConnection(cli_config.path)
     cli = CliControl.create(conn)
+
+    print("Getting status")
+    status = cli.get_status()
     
     # prepare for API
-    BitwardenControl.login(cli, credentials)
-    BitwardenControl.unlock(cli, master_password)
+    print("Logging in")
+    cli.login(credentials, status)
+    print("Unlocking vault")
+    cli.unlock(master_password)
     
     # start the API
     process = cli.serve_api(port=api_config.port, host=api_config.hostname)
@@ -54,37 +59,6 @@ class BitwardenControl(ContextManager):
     api = LocalApiControl.create(conn, process)
 
     return BitwardenControl(api, cli)
-
-
-  # TODO: Move to CliControl or Cli service
-  @staticmethod
-  def login(cli: CliControl, credentials: LoginCredentials|None) -> None:
-    print("Checking status")
-    status = cli.get_status()
-
-    if status['status'] == 'unauthenticated':
-      print("Status: Not logged in")
-      if credentials is not None:
-        print(f"Logging in as {credentials['email']}")
-        cli.login(credentials['email'], credentials['password'])
-      else:
-        raise RuntimeError(f"Not logged in and no credentials provided")
-
-    else:
-      status = cast(AuthenticatedStatusResponse, status)
-      print(f"Status: Logged in as {status['userEmail']}")
-      # if credentials were given, the email should match. Otherwise, log out and back in
-      if credentials is not None:
-        if status['userEmail'] != credentials['email']:
-          print(f"Should be using account '{credentials['email']}', logging out and back in")
-          cli.logout()
-          BitwardenControl.login(cli, credentials)
-
-
-  @staticmethod
-  def unlock(cli: CliControl, password: str) -> None:
-    print("Unlocking vault")
-    cli.unlock(password)
 
   def __enter__(self) -> BitwardenControl:
     return self

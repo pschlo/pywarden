@@ -1,4 +1,4 @@
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, cast
 
 
 class StatusResponse(TypedDict):
@@ -7,6 +7,5 @@ class StatusResponse(TypedDict):
   status: Literal['unauthenticated', 'locked', 'unlocked']
 
 class AuthenticatedStatusResponse(StatusResponse):
-  status: Literal['locked', 'unlocked']
   userEmail: str
   userId: str
