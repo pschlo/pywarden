@@ -13,20 +13,22 @@ class CliControl:
   _api: ApiService
   _misc: MiscService
 
-  is_logged_in: bool
-  _session_key: str|None = None
+  status: StatusResponse  # cached status response
+
+  @property
+  def is_logged_in(self):
+    return self.status['status'] != 'unauthenticated'
 
   @property
   def is_locked(self):
-    return self._session_key is None
+    return self.status['status'] != 'unlocked'
   
   @property
   def session_key(self) -> str|None:
-    return self._session_key
+    return os.environ.get('BW_SESSION', None)
   
   @session_key.setter
   def session_key(self, value: str|None) -> None:
-    self._session_key = value
     if value is None:
       os.environ.pop('BW_SESSION', None)
     else:
@@ -49,26 +51,30 @@ class CliControl:
     self.serve_api = self._api.serve
     self.get_status = self._misc.get_status
 
-    status = self.get_status()['status']
-    assert status != 'unlocked'  # cannot possibly be unlocked without session key
-    self.is_logged_in = False if status == 'unauthenticated' else True
+    self.status = self.get_status()
+    assert self.is_locked  # cannot possibly be unlocked without session key
 
-
-  def login(self, credentials: LoginCredentials, status: StatusResponse):
-    self._auth.login(credentials, status)
-    self.is_logged_in = True
+  def login(self, credentials: LoginCredentials):
+    self._auth.login(credentials, self.status)
+    self.status = self.get_status()
+    assert self.is_logged_in
 
   def logout(self):
     self._auth.logout()
-    self.is_logged_in = False
+    self.status = self.get_status()
+    assert not self.is_logged_in
 
   def lock(self):
     self._auth.lock()
     self.session_key = None
+    self.status = self.get_status()
+    assert self.is_locked
 
   def unlock(self, password: str):
     key = self._auth.unlock(password)
     self.session_key = key
+    self.status = self.get_status()
+    assert not self.is_locked
 
   @staticmethod
   def create(conn: CliConnection) -> CliControl:

@@ -38,20 +38,17 @@ class BitwardenControl(ContextManager):
 
   @staticmethod
   def create(api_config: ApiConfig, cli_config: CliConfig, master_password: str, credentials: LoginCredentials) -> BitwardenControl:
-    # create CLI object
+    print("Creating CLI control")
     conn = CliConnection(cli_config.path)
     cli = CliControl.create(conn)
-
-    print("Getting status")
-    status = cli.get_status()
     
     # prepare for API
     print("Logging in")
-    cli.login(credentials, status)
+    cli.login(credentials)
     print("Unlocking vault")
     cli.unlock(master_password)
     
-    # start the API
+    print("Starting API")
     process = cli.serve_api(port=api_config.port, host=api_config.hostname)
 
     # create API object
