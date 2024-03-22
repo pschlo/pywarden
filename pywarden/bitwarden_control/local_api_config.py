@@ -5,4 +5,4 @@ from dataclasses import dataclass
 class ApiConfig:
   hostname: str = 'localhost'
   port: int = 8087
-  ready_timeout_secs: float = 10
+  startup_timeout_secs: float|None = None
