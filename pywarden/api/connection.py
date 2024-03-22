@@ -9,9 +9,6 @@ type Body = Any
 type Files = dict[str,tuple[str, str|bytes]]
 
 
-"""
-Used by services for communication with Bitwarden Vault Management API
-"""
 class ApiConnection:
   scheme: str
   host: str

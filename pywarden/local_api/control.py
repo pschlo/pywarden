@@ -7,13 +7,6 @@ import time
 from pywarden.api import ApiControl, ApiConnection, AttachmentsService, ItemsService, MiscService
 
 
-
-"""
-Represents a running instance of a local Bitwarden Vault Management API server.
-Things you can do with this object:
-  - communicate with the API
-  - shut the server down
-"""
 class LocalApiControl(ApiControl):
   process: Popen
 

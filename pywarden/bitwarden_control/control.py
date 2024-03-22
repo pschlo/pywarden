@@ -17,13 +17,6 @@ from .local_api_config import ApiConfig
 from .cli_config import CliConfig
 
 
-
-"""
-Upon creation, ensures that:
-  - user is logged in
-  - vault is unlocked
-The session token is then used to serve the API.
-"""
 class BitwardenControl(ContextManager):
   api: LocalApiControl
   cli: CliControl
