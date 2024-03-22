@@ -20,17 +20,25 @@ from .cli_config import CliConfig
 class BitwardenControl(ContextManager):
   api: LocalApiControl
   cli: CliControl
+  logout_on_shutdown: bool
 
 
-  def __init__(self, api: LocalApiControl, cli: CliControl, *, timeout_secs: float|None = None) -> None:
+  def __init__(self, api: LocalApiControl, cli: CliControl, *, timeout_secs: float|None = None, logout_on_shutdown: bool) -> None:
     self.api = api
     self.cli = cli
+    self.logout_on_shutdown = logout_on_shutdown
 
     self.wait_until_ready(timeout_secs)
 
 
   @staticmethod
-  def create(api_config: ApiConfig, cli_config: CliConfig, master_password: str, credentials: LoginCredentials) -> BitwardenControl:
+  def create(
+    api_config: ApiConfig,
+    cli_config: CliConfig,
+    master_password: str,
+    credentials: LoginCredentials,
+    logout_on_shutdown: bool = True
+  ) -> BitwardenControl:
     print("Creating CLI control")
     conn = CliConnection(cli_config.path)
     cli = CliControl.create(conn)
@@ -48,7 +56,7 @@ class BitwardenControl(ContextManager):
     conn = ApiConnection('http', port=api_config.port, host=api_config.hostname)
     api = LocalApiControl.create(conn, process)
 
-    return BitwardenControl(api, cli, timeout_secs=api_config.startup_timeout_secs)
+    return BitwardenControl(api, cli, timeout_secs=api_config.startup_timeout_secs, logout_on_shutdown=logout_on_shutdown)
 
   def __enter__(self) -> BitwardenControl:
     return self
@@ -63,7 +71,10 @@ class BitwardenControl(ContextManager):
       self.shutdown()
       raise
 
-  def shutdown(self) -> None:
+  def shutdown(self, logout: bool|None = None) -> None:
+    if logout is None:
+      logout = self.logout_on_shutdown
+
     print(f"Shutting down Bitwarden Control")
 
     print(f"  Stopping API")
@@ -78,8 +89,9 @@ class BitwardenControl(ContextManager):
     except TimeoutError as e:
       print(f"TimeoutError: {e}")
 
-    print(f"  Logging out")
-    try:
-      self.cli.logout()
-    except TimeoutError as e:
-      print(f"TimeoutError: {e}")
+    if logout:
+      print(f"  Logging out")
+      try:
+        self.cli.logout()
+      except TimeoutError as e:
+        print(f"TimeoutError: {e}")
