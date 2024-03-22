@@ -1,5 +1,5 @@
 from __future__ import annotations
-from subprocess import Popen
+from subprocess import Popen, TimeoutExpired
 from typing import Any, override
 import time
 
@@ -25,13 +25,27 @@ class LocalApiControl(ApiControl):
     )
   
 
-  def shutdown(self):
+  def shutdown(self, timeout_secs: float|None = None) -> None:
     self.process.terminate()
 
-
-  def wait_until_ready(self, timeout_secs: float):
-    t0 = time.perf_counter()
+    if timeout_secs is None:
+      self.process.wait()
+      return
     
+    try:
+      self.process.wait(timeout_secs)
+    except TimeoutExpired:
+      raise TimeoutError(f"API server did not exit after {timeout_secs} seconds")
+
+
+  def wait_until_ready(self, timeout_secs: float|None = None):
+    t0 = time.perf_counter()
+
+    if timeout_secs is None:
+      while not self.is_reachable():
+        time.sleep(0.1)
+      return
+
     while time.perf_counter() - t0 < timeout_secs:
       if self.is_reachable():
         break
