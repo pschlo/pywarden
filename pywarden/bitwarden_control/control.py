@@ -22,11 +22,11 @@ class BitwardenControl(ContextManager):
   cli: CliControl
 
 
-  def __init__(self, api: LocalApiControl, cli: CliControl) -> None:
+  def __init__(self, api: LocalApiControl, cli: CliControl, timeout_secs: float) -> None:
     self.api = api
     self.cli = cli
 
-    self.wait_until_ready()
+    self.wait_until_ready(timeout_secs)
 
 
   @staticmethod
@@ -48,7 +48,7 @@ class BitwardenControl(ContextManager):
     conn = ApiConnection('http', port=api_config.port, host=api_config.hostname)
     api = LocalApiControl.create(conn, process)
 
-    return BitwardenControl(api, cli)
+    return BitwardenControl(api, cli, timeout_secs=api_config.ready_timeout_secs)
 
   def __enter__(self) -> BitwardenControl:
     return self
@@ -56,7 +56,7 @@ class BitwardenControl(ContextManager):
   def __exit__(self, typ, val, tb) -> None:
     self.shutdown()
 
-  def wait_until_ready(self, timeout_secs: float = 10):
+  def wait_until_ready(self, timeout_secs: float):
     try:
       self.api.wait_until_ready(timeout_secs)
     except TimeoutError:
