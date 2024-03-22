@@ -12,8 +12,8 @@ class AuthService(Service):
     if status['status'] == 'unauthenticated':
       print("Status: Not logged in")
       print(f"Logging in as {credentials['email']}")
-      command = ['login', credentials['email'], credentials['password']]
-      r = self.conn.run_cli_command(command)
+      command = ['login', credentials['email']]
+      r = self.conn.run_command(command, input=credentials['password'].encode())
       if r.returncode > 0:
         raise RuntimeError(f"Login failed")
 
@@ -33,18 +33,18 @@ class AuthService(Service):
       
     
   def logout(self) -> None:
-    if self.conn.run_cli_command(['logout']).returncode > 0:
+    if self.conn.run_command(['logout']).returncode > 0:
       raise RuntimeError(f"Logout failed")
     
   def lock(self) -> None:
-    r = self.conn.run_cli_command(['lock'])
+    r = self.conn.run_command(['lock'])
     if r.returncode > 0:
       raise RuntimeError(f"Lock failed")
 
   def unlock(self, password: str) -> str:
     if not password:
       raise RuntimeError(f"Empty master password")
-    r = self.conn.run_cli_command(['unlock', '--raw', password])
+    r = self.conn.run_command(['unlock', '--raw'], input=password.encode())
     if r.returncode > 0:
       raise RuntimeError(f"Unlock failed")
-    return r.stdout
+    return r.stdout.decode()
