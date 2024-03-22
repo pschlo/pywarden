@@ -3,7 +3,7 @@ import os
 
 from .services import AuthService, ImportExportService, MiscService, ApiService
 from .connection import CliConnection
-from .login_credentials import LoginCredentials
+from .login_credentials import EmailCredentials
 from .cli_responses import StatusResponse
 
 
@@ -54,7 +54,7 @@ class CliControl:
     self.status = self.get_status()
     assert self.is_locked  # cannot possibly be unlocked without session key
 
-  def login(self, credentials: LoginCredentials):
+  def login(self, credentials: EmailCredentials):
     self._auth.login(credentials, self.status)
     self.status = self.get_status()
     assert self.is_logged_in

@@ -10,7 +10,7 @@ import time
 import requests
 import math
 
-from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliConnection, LoginCredentials
+from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliConnection, EmailCredentials
 from pywarden.api import ApiConnection
 from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
@@ -36,7 +36,7 @@ class BitwardenControl(ContextManager):
     api_config: ApiConfig,
     cli_config: CliConfig,
     master_password: str,
-    credentials: LoginCredentials,
+    credentials: EmailCredentials,
     logout_on_shutdown: bool = True
   ) -> BitwardenControl:
     print("Creating CLI control")
