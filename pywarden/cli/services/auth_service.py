@@ -14,21 +14,26 @@ class AuthService(Service):
       status = cast(AuthenticatedStatusResponse, status)
       self._login_when_authenticated(credentials, status)
 
-  def _login_when_unauthenticated(self, credentials: EmailCredentials):
+  def _login_when_unauthenticated(self, creds: EmailCredentials):
     print("Status: Not logged in")
-    print(f"Logging in as {credentials['email']}")
-    command = ['login', credentials['email']]
-    r = self.conn.run_command(command, input=credentials['password'].encode())
+    print(f"Logging in as {creds['email']}")
+
+    command = ['login', creds['email']]
+    two_step_creds = creds['two_step_credentials']
+    if two_step_creds is not None:
+      command += ['--method', str(two_step_creds['type'].value), '--code', two_step_creds['code']]
+
+    r = self.conn.run_command(command, input=creds['password'].encode())
     if r.returncode > 0:
       raise RuntimeError(f"Login failed")
       
-  def _login_when_authenticated(self, credentials: EmailCredentials, status: AuthenticatedStatusResponse):
+  def _login_when_authenticated(self, creds: EmailCredentials, status: AuthenticatedStatusResponse):
     print(f"Status: Logged in as {status['userEmail']}")
     # The emails should match. Otherwise, log out and back in
-    if status['userEmail'] != credentials['email']:
-      print(f"Should be using account '{credentials['email']}', logging out and back in")
+    if status['userEmail'] != creds['email']:
+      print(f"Should be using account '{creds['email']}', logging out and back in")
       self.logout()
-      self._login_when_unauthenticated(credentials)
+      self._login_when_unauthenticated(creds)
     
   def logout(self) -> None:
     if self.conn.run_command(['logout']).returncode > 0:
