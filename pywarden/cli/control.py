@@ -1,10 +1,11 @@
 from __future__ import annotations
 import os
+from typing import Any, cast
 
 from .services import AuthService, ImportExportService, MiscService, ApiService
 from .connection import CliConnection
 from .login_credentials import EmailCredentials
-from .cli_responses import StatusResponse
+from .cli_responses import StatusResponse, AuthenticatedStatusResponse
 
 
 class CliControl:
@@ -53,6 +54,8 @@ class CliControl:
 
     self.status = self.get_status()
     assert self.is_locked  # cannot possibly be unlocked without session key
+    self._print_status()
+
 
   def login(self, credentials: EmailCredentials):
     self._auth.login(credentials, self.status)
@@ -75,6 +78,20 @@ class CliControl:
     self.session_key = key
     self.status = self.get_status()
     assert not self.is_locked
+
+  def _print_status(self) -> None:
+    r = 'Current Status: '
+    if self.is_logged_in:
+      status = cast(AuthenticatedStatusResponse, self.status)
+      r += f"Logged in as {status['userEmail']}"
+    else:
+      r += f"Not logged in"
+    r += ", "
+    if self.is_locked:
+      r += "vault locked"
+    else:
+      r += "vault unlocked"
+    print(r)
 
   @staticmethod
   def create(conn: CliConnection) -> CliControl:

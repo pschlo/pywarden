@@ -36,7 +36,7 @@ class BitwardenControl(ContextManager):
     api_config: ApiConfig,
     cli_config: CliConfig,
     master_password: str,
-    credentials: EmailCredentials,
+    credentials: EmailCredentials|None = None,
     logout_on_shutdown: bool = True
   ) -> BitwardenControl:
     print("Creating CLI control")
@@ -44,8 +44,14 @@ class BitwardenControl(ContextManager):
     cli = CliControl.create(conn)
     
     # prepare for API
-    print("Logging in")
-    cli.login(credentials)
+
+    if credentials is not None:
+      cli.login(credentials)
+    else:
+      if not cli.is_logged_in:
+        raise RuntimeError(f"Not logged in and no login credentials provided")
+      print("No credentials provided, using authenticated account")
+
     print("Unlocking vault")
     cli.unlock(master_password)
     
