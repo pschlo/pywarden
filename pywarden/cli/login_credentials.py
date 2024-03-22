@@ -43,7 +43,7 @@ def ask_email_credentials() -> EmailCredentials:
   if is_two_step:
     r = None
     while (r is None) or r not in {'0', '1', '3'}:
-      r = input("2FA method (0: Authenicator, 1: Email, 3: YubiKey OTP): ").strip()
+      r = input("2FA method (0: Authenticator, 1: Email, 3: YubiKey OTP): ").strip()
     two_step_type = TwoStepType(int(r))
 
     r = None
