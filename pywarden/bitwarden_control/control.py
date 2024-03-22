@@ -65,9 +65,21 @@ class BitwardenControl(ContextManager):
 
   def shutdown(self) -> None:
     print(f"Shutting down Bitwarden Control")
+
     print(f"  Stopping API")
-    self.api.shutdown()
+    try:
+      self.api.shutdown()
+    except TimeoutError as e:
+      print(f"TimeoutError: {e}")
+
     print(f"  Locking vault")
-    self.cli.lock()
+    try:
+      self.cli.lock()
+    except TimeoutError as e:
+      print(f"TimeoutError: {e}")
+
     print(f"  Logging out")
-    self.cli.logout()
+    try:
+      self.cli.logout()
+    except TimeoutError as e:
+      print(f"TimeoutError: {e}")
