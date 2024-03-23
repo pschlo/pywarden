@@ -3,6 +3,9 @@ from subprocess import Popen, PIPE, CompletedProcess
 from pathlib import Path
 from typing import Any, overload, Literal
 from collections.abc import Sequence
+import os
+
+from .cli_responses import StatusResponse
 
 
 """
@@ -10,9 +13,22 @@ Low-level communication interface to local Bitwarden CLI
 """
 class CliConnection:
   path: Path
+  session_key: str|None = None
+  data_dir: Path|None = None
+
 
   def __init__(self, path: Path) -> None:
     self.path = path
+
+  def get_env(self) -> dict[str,str]:
+    env: dict[str,str] = dict()
+    
+    if self.session_key is not None:
+      env['BW_SESSION'] = self.session_key
+    if self.data_dir is not None:
+      env['BITWARDEN_APPDATA_DIR'] = str(self.data_dir)
+    
+    return os.environ.copy() | env
 
 
   @overload
@@ -42,7 +58,7 @@ class CliConnection:
     background: bool = False,
   ) -> Popen[bytes] | CompletedProcess[bytes]:
     
-    proc = Popen([str(self.path), *command], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    proc = Popen([str(self.path), *command], stdin=PIPE, stdout=PIPE, stderr=PIPE, env=self.get_env())
     if background:
       return proc
     stdout, stderr = proc.communicate(input)
