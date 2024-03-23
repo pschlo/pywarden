@@ -4,4 +4,5 @@ from pathlib import Path
 
 @dataclass
 class CliConfig:
-  path: Path = Path('bw')
+  cli_path: Path = Path('bw')
+  data_dir: Path|None = None

@@ -12,21 +12,23 @@ from .cli_responses import StatusResponse
 Low-level communication interface to local Bitwarden CLI
 """
 class CliConnection:
-  path: Path
+  cli_path: Path
   session_key: str|None = None
   data_dir: Path|None = None
 
 
-  def __init__(self, path: Path) -> None:
-    self.path = path
+  def __init__(self, cli_path: Path, data_dir: Path|None = None) -> None:
+    self.cli_path = cli_path
+    self.data_dir = data_dir
+
 
   def get_env(self) -> dict[str,str]:
     env: dict[str,str] = dict()
-    
+
     if self.session_key is not None:
       env['BW_SESSION'] = self.session_key
     if self.data_dir is not None:
-      env['BITWARDEN_APPDATA_DIR'] = str(self.data_dir)
+      env['BITWARDENCLI_APPDATA_DIR'] = str(self.data_dir)
     
     return os.environ.copy() | env
 
@@ -58,7 +60,7 @@ class CliConnection:
     background: bool = False,
   ) -> Popen[bytes] | CompletedProcess[bytes]:
     
-    proc = Popen([str(self.path), *command], stdin=PIPE, stdout=PIPE, stderr=PIPE, env=self.get_env())
+    proc = Popen([str(self.cli_path), *command], stdin=PIPE, stdout=PIPE, stderr=PIPE, env=self.get_env())
     if background:
       return proc
     stdout, stderr = proc.communicate(input)
