@@ -39,9 +39,12 @@ class BitwardenControl(ContextManager):
     credentials: EmailCredentials|None = None,
     logout_on_shutdown: bool = True
   ) -> BitwardenControl:
+    
     print("Creating CLI control")
     conn = CliConnection(cli_config.cli_path, cli_config.data_dir)
     cli = CliControl.create(conn)
+    if cli_config.server is not None:
+      cli.set_server(cli_config.server)
     
     # prepare for API
 
