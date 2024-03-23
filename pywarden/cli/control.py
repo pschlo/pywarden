@@ -49,7 +49,7 @@ class CliControl:
     # get initial status
     self.status = self.get_status()
     assert self.is_locked  # cannot possibly be unlocked without session key
-    self._print_status()
+    print(self.get_formatted_status())
 
   def login(self, credentials: EmailCredentials):
     self._auth_service.login(credentials, self.status)
@@ -73,11 +73,11 @@ class CliControl:
     self.status = self.get_status()
     assert not self.is_locked
 
-  def _print_status(self) -> None:
+  def get_formatted_status(self) -> str:
     r = 'Current Status: '
     if self.is_logged_in:
       status = cast(AuthenticatedStatusResponse, self.status)
-      r += f"Logged in as {status['userEmail']}"
+      r += f"Logged in as {status['userEmail']} on {status['serverUrl']}"
     else:
       r += f"Not logged in"
     r += ", "
@@ -85,7 +85,7 @@ class CliControl:
       r += "vault locked"
     else:
       r += "vault unlocked"
-    print(r)
+    return r
 
   @staticmethod
   def create(conn: CliConnection) -> CliControl:
