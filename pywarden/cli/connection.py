@@ -1,5 +1,5 @@
 from __future__ import annotations
-from subprocess import Popen, PIPE, CompletedProcess
+from subprocess import Popen, PIPE, CompletedProcess, CalledProcessError
 from pathlib import Path
 from typing import Any, overload, Literal
 from collections.abc import Sequence
@@ -64,4 +64,13 @@ class CliConnection:
     if background:
       return proc
     stdout, stderr = proc.communicate(input)
-    return CompletedProcess(proc.args, proc.returncode, stdout=stdout, stderr=stderr)
+    r = CompletedProcess(proc.args, proc.returncode, stdout=stdout, stderr=stderr)
+
+    try:
+      r.check_returncode()
+    except CalledProcessError:
+      msg = r.stderr.decode().splitlines()[-1]  # only consider last line. Previous lines are sometimes leftover from input prompt.
+      print(f"ERROR: {msg}")
+      raise
+
+    return r
