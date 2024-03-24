@@ -43,15 +43,19 @@ class BitwardenControl(ContextManager):
     print("Creating CLI control")
     conn = CliConnection(cli_config.cli_path, cli_config.data_dir)
     cli = CliControl.create(conn)
+    status = cli.get_status()
+
+    # set config
     if cli_config.server is not None:
-      cli.set_server(cli_config.server)
+      cli.set_server(cli_config.server, status=status)
+      status = cli.get_status()
     
     # prepare for API
 
     if credentials is not None:
-      cli.login(credentials)
+      cli.login(credentials, status)
     else:
-      if not cli.is_logged_in:
+      if not cli.is_logged_in(status):
         raise RuntimeError(f"Not logged in and no login credentials provided")
       print("No credentials provided, using authenticated account")
 

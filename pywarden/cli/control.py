@@ -15,15 +15,15 @@ class CliControl:
   _misc_service: MiscService
   _config_service: ConfigService
 
-  status: StatusResponse  # cached status response
+  def is_logged_in(self, status: StatusResponse|None = None):
+    if status is None:
+      status = self.get_status()
+    return status['status'] != 'unauthenticated'
 
-  @property
-  def is_logged_in(self):
-    return self.status['status'] != 'unauthenticated'
-
-  @property
-  def is_locked(self):
-    return self.status['status'] != 'unlocked'
+  def is_locked(self, status: StatusResponse|None = None):
+    if status is None:
+      status = self.get_status()
+    return self.get_status()['status'] != 'unlocked'
 
   def __init__(self,
     conn: CliConnection,
@@ -47,12 +47,14 @@ class CliControl:
     self.get_server = self._config_service.get_server
 
     # get initial status
-    self.status = self.get_status()
-    assert self.is_locked  # cannot possibly be unlocked without session key
-    print(self.get_formatted_status())
+    status = self.get_status()
+    print(self.get_formatted_status(status))
 
-  def login(self, creds: EmailCredentials):
-    if self.is_logged_in:
+  def login(self, creds: EmailCredentials, status: StatusResponse|None = None):
+    if status is None:
+      status = self.get_status()
+
+    if self.is_logged_in(status):
       print(f"Already authenticated, logging out and back in")
       self.logout()
       self.login(creds)
@@ -60,42 +62,40 @@ class CliControl:
 
     print(f"Logging in as {creds['email']} on {self.get_server()}")
     self._auth_service.login(creds)
-    self.status = self.get_status()
-    assert self.is_logged_in
 
   def logout(self):
     self._auth_service.logout()
-    self.status = self.get_status()
-    assert not self.is_logged_in
 
   def lock(self):
     self._auth_service.lock()
     self.conn.session_key = None
-    self.status = self.get_status()
-    assert self.is_locked
 
   def unlock(self, password: str):
     key = self._auth_service.unlock(password)
     self.conn.session_key = key
-    self.status = self.get_status()
-    assert not self.is_locked
 
-  def set_server(self, url: str):
+  def set_server(self, url: str, status: StatusResponse|None = None):
+    if status is None:
+      status = self.get_status()
+
     # can only change server if not logged in
-    if url != self.status['serverUrl'] and self.is_logged_in:
+    if url != self.get_status()['serverUrl'] and self.is_logged_in(status):
       print(f"Cannot change server to {url} when logged in, logging out")
       self.logout()
     self._config_service.set_server(url)
 
-  def get_formatted_status(self) -> str:
+  def get_formatted_status(self, status: StatusResponse|None = None) -> str:
+    if status is None:
+      status = self.get_status()
+
     r = 'Current Status: '
-    if self.is_logged_in:
-      status = cast(AuthenticatedStatusResponse, self.status)
+    if self.is_logged_in(status):
+      status = cast(AuthenticatedStatusResponse, status)
       r += f"Logged in as {status['userEmail']} on {status['serverUrl']}"
     else:
       r += f"Not logged in"
     r += ", "
-    if self.is_locked:
+    if self.is_locked(status):
       r += "vault locked"
     else:
       r += "vault unlocked"
