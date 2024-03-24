@@ -9,3 +9,6 @@ class StatusResponse(TypedDict):
 class AuthenticatedStatusResponse(StatusResponse):
   userEmail: str
   userId: str
+
+
+DEFAULT_SERVER = 'https://bitwarden.com'

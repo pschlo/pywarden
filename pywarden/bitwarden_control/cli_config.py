@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from pywarden.cli import DEFAULT_SERVER
+
 
 @dataclass
 class CliConfig:
@@ -9,4 +11,4 @@ class CliConfig:
   data_dir: Path|None = None
 
   # config service settings
-  server: str|None = None
+  server: str = DEFAULT_SERVER

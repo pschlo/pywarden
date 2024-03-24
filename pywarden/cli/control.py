@@ -4,7 +4,7 @@ from typing import Any, cast
 from .services import AuthService, ImportExportService, MiscService, ApiService, ConfigService
 from .connection import CliConnection
 from .login_credentials import EmailCredentials
-from .cli_responses import StatusResponse, AuthenticatedStatusResponse
+from .cli_responses import StatusResponse, AuthenticatedStatusResponse, DEFAULT_SERVER
 
 
 class CliControl:
@@ -44,15 +44,22 @@ class CliControl:
     self.get_export = self._import_export_service.get_export
     self.serve_api = self._api_service.serve
     self.get_status = self._misc_service.get_status
-    self.set_server = self._config_service.set_server
+    self.get_server = self._config_service.get_server
 
     # get initial status
     self.status = self.get_status()
     assert self.is_locked  # cannot possibly be unlocked without session key
     print(self.get_formatted_status())
 
-  def login(self, credentials: EmailCredentials):
-    self._auth_service.login(credentials, self.status)
+  def login(self, creds: EmailCredentials):
+    if self.is_logged_in:
+      print(f"Already authenticated, logging out and back in")
+      self.logout()
+      self.login(creds)
+      return
+
+    print(f"Logging in as {creds['email']} on {self.get_server()}")
+    self._auth_service.login(creds)
     self.status = self.get_status()
     assert self.is_logged_in
 
@@ -72,6 +79,13 @@ class CliControl:
     self.conn.session_key = key
     self.status = self.get_status()
     assert not self.is_locked
+
+  def set_server(self, url: str):
+    # can only change server if not logged in
+    if url != self.status['serverUrl'] and self.is_logged_in:
+      print(f"Cannot change server to {url} when logged in, logging out")
+      self.logout()
+    self._config_service.set_server(url)
 
   def get_formatted_status(self) -> str:
     r = 'Current Status: '
