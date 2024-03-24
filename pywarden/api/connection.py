@@ -3,6 +3,8 @@ from typing import Any
 import requests
 from requests import Response
 
+from .state import ApiState
+
 
 type Params = dict[str, Any]
 type Body = Any
@@ -10,11 +12,13 @@ type Files = dict[str,tuple[str, str|bytes]]
 
 
 class ApiConnection:
+  state: ApiState
   scheme: str
   host: str
   port: int
 
-  def __init__(self, scheme: str, host: str, port: int) -> None:
+  def __init__(self, state: ApiState, scheme: str, host: str, port: int) -> None:
+    self.state = state
     self.scheme = scheme
     self.host = host
     self.port = port

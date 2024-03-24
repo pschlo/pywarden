@@ -4,21 +4,23 @@ from typing import Any, override
 import time
 
 
-from pywarden.api import ApiControl, ApiConnection, AttachmentsService, ItemsService, MiscService
+from pywarden.api import ApiControl, ApiConnection, ApiState, AttachmentsService, ItemsService, MiscService
 
 
 class LocalApiControl(ApiControl):
   process: Popen
 
-  def __init__(self, process: Popen, attachments: AttachmentsService, items: ItemsService, misc: MiscService) -> None:
-    super().__init__(attachments, items, misc)
+  def __init__(self, process: Popen, state: ApiState, attachments: AttachmentsService, items: ItemsService, misc: MiscService) -> None:
+    super().__init__(state, attachments, items, misc)
     self.process = process
 
   @override
   @staticmethod
-  def create(conn: ApiConnection, process: Popen) -> LocalApiControl:
+  def create(process: Popen, state: ApiState, scheme: str, host: str, port: int) -> LocalApiControl:
+    conn = ApiConnection(state, scheme=scheme, host=host, port=port)
     return LocalApiControl(
       process=process,
+      state=state,
       attachments = AttachmentsService(conn),
       items = ItemsService(conn),
       misc = MiscService(conn)

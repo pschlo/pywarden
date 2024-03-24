@@ -3,14 +3,17 @@ import requests
 
 from .services import AttachmentsService, ItemsService, MiscService
 from .connection import ApiConnection
+from .state import ApiState
 
 
 class ApiControl:
   def __init__(self,
+    state: ApiState,
     attachments: AttachmentsService,
     items: ItemsService,
     misc: MiscService
   ) -> None:
+    self.state = state
     self._attachments = attachments
     self._items = items
     self._misc = misc
@@ -29,8 +32,10 @@ class ApiControl:
 
 
   @staticmethod
-  def create(conn: ApiConnection) -> ApiControl:
+  def create(state: ApiState, scheme: str, host: str, port: int) -> ApiControl:
+    conn = ApiConnection(state, scheme=scheme, host=host, port=port)
     return ApiControl(
+      state=state,
       attachments = AttachmentsService(conn),
       items = ItemsService(conn),
       misc = MiscService(conn)

@@ -11,7 +11,7 @@ import requests
 import math
 
 from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliState, CliConnection, EmailCredentials
-from pywarden.api import ApiConnection
+from pywarden.api import ApiConnection, ApiState
 from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
 from .cli_config import CliConfig
@@ -67,8 +67,8 @@ class BitwardenControl(ContextManager):
     process = cli.serve_api(port=api_config.port, host=api_config.hostname)
 
     # create API object
-    conn = ApiConnection('http', port=api_config.port, host=api_config.hostname)
-    api = LocalApiControl.create(conn, process)
+    state = ApiState()
+    api = LocalApiControl.create(process, state, scheme='http', port=api_config.port, host=api_config.hostname)
 
     return BitwardenControl(api, cli, timeout_secs=api_config.startup_timeout_secs, logout_on_shutdown=logout_on_shutdown)
 
