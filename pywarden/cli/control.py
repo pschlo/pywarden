@@ -6,10 +6,11 @@ from .services import AuthService, ImportExportService, MiscService, ApiService,
 from .connection import CliConnection
 from .login_credentials import EmailCredentials
 from .cli_responses import StatusResponse, AuthenticatedStatusResponse, DEFAULT_SERVER
+from .state import CliState
 
 
 class CliControl:
-  conn: CliConnection
+  state: CliState
   _auth_service: AuthService
   _import_export_service: ImportExportService
   _api_service: ApiService
@@ -17,14 +18,14 @@ class CliControl:
   _config_service: ConfigService
 
   def __init__(self,
-    conn: CliConnection,
+    state: CliState,
     auth_service: AuthService,
     import_export_service: ImportExportService,
     api_service: ApiService,
     misc_service: MiscService,
     config_service: ConfigService
   ) -> None:
-    self.conn = conn
+    self.state = state
     self._auth_service = auth_service
     self._import_export_service = import_export_service
     self._api_service = api_service
@@ -67,11 +68,11 @@ class CliControl:
 
   def lock(self):
     self._auth_service.lock()
-    self.conn.session_key = None
+    self.state.session_key = None
 
   def unlock(self, password: str):
     key = self._auth_service.unlock(password)
-    self.conn.session_key = key
+    self.state.session_key = key
 
 
   def set_server(self, url: str, status: StatusResponse|None = None):
@@ -89,24 +90,24 @@ class CliControl:
 
   @property
   def session_key(self) -> str|None:
-    return self.conn.session_key
+    return self.state.session_key
   @session_key.setter
   def session_key(self, value: str) -> None:
-    self.conn.session_key = value
+    self.state.session_key = value
 
   @property
   def cli_path(self) -> Path:
-    return self.conn.cli_path
+    return self.state.cli_path
   @cli_path.setter
   def cli_path(self, value: Path) -> None:
-    self.conn.cli_path = value
+    self.state.cli_path = value
 
   @property
   def data_dir(self) -> Path|None:
-    return self.conn.data_dir
+    return self.state.data_dir
   @data_dir.setter
   def data_dir(self, value: Path) -> None:
-    self.conn.data_dir = value
+    self.state.data_dir = value
   
 
   def get_formatted_status(self, status: StatusResponse|None = None) -> str:
@@ -127,9 +128,10 @@ class CliControl:
     return r
 
   @staticmethod
-  def create(conn: CliConnection) -> CliControl:
+  def create(state: CliState) -> CliControl:
+    conn = CliConnection(state)
     return CliControl(
-      conn=conn,
+      state=state,
       auth_service=AuthService(conn),
       import_export_service=ImportExportService(conn),
       api_service=ApiService(conn),
