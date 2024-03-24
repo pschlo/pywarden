@@ -23,7 +23,7 @@ class CliControl:
   def is_locked(self, status: StatusResponse|None = None):
     if status is None:
       status = self.get_status()
-    return self.get_status()['status'] != 'unlocked'
+    return status['status'] != 'unlocked'
 
   def __init__(self,
     conn: CliConnection,
@@ -45,10 +45,6 @@ class CliControl:
     self.serve_api = self._api_service.serve
     self.get_status = self._misc_service.get_status
     self.get_server = self._config_service.get_server
-
-    # get initial status
-    status = self.get_status()
-    print(self.get_formatted_status(status))
 
   def login(self, creds: EmailCredentials, status: StatusResponse|None = None):
     if status is None:

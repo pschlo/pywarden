@@ -44,6 +44,7 @@ class BitwardenControl(ContextManager):
     conn = CliConnection(cli_config.cli_path, cli_config.data_dir)
     cli = CliControl.create(conn)
     status = cli.get_status()
+    print(cli.get_formatted_status(status))
 
     # set config
     if cli_config.server is not None:
