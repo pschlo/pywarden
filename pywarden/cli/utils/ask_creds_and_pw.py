@@ -17,10 +17,12 @@ def ask_creds_and_pw(cli: CliControl, email: str|None = None) -> tuple[EmailCred
       r = input("Email: ").strip()
     email = r
 
-  if cli.is_logged_in(status) and cast(AuthStatusResponse, status)['userEmail'] == email:
+  if cli.is_logged_in(status) and cast(AuthStatusResponse, status)['userEmail'] == email and status['serverUrl'] == cli.get_server():
+    # already logged in
     creds = None
     master_password = ask_master_password(email)
   else:
+    # not logged in or logged in as wrong user
     creds = ask_email_credentials(email)
     master_password = creds['password']
   
