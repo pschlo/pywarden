@@ -5,7 +5,7 @@ from pathlib import Path
 from .services import AuthService, ImportExportService, MiscService, ApiService, ConfigService
 from .connection import CliConnection
 from .login_credentials import EmailCredentials
-from .cli_responses import StatusResponse, AuthenticatedStatusResponse, DEFAULT_SERVER
+from .cli_responses import StatusResponse, AuthStatusResponse, DEFAULT_SERVER
 from .state import CliState
 
 
@@ -37,6 +37,8 @@ class CliControl:
     self.serve_api = self._api_service.serve
     self.get_status = self._misc_service.get_status
     self.get_server = self._config_service.get_server
+
+    print(self.get_formatted_status())
 
 
   def is_logged_in(self, status: StatusResponse|None = None):
@@ -116,7 +118,7 @@ class CliControl:
 
     r = 'Current Status: '
     if self.is_logged_in(status):
-      status = cast(AuthenticatedStatusResponse, status)
+      status = cast(AuthStatusResponse, status)
       r += f"Logged in as {status['userEmail']} at {status['serverUrl']}"
     else:
       r += f"Not logged in"

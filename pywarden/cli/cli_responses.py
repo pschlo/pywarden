@@ -6,7 +6,7 @@ class StatusResponse(TypedDict):
   lastSync: str|None
   status: Literal['unauthenticated', 'locked', 'unlocked']
 
-class AuthenticatedStatusResponse(StatusResponse):
+class AuthStatusResponse(StatusResponse):
   userEmail: str
   userId: str
 

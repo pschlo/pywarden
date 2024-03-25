@@ -1,5 +1,5 @@
 from __future__ import annotations
-from subprocess import Popen, TimeoutExpired
+from subprocess import Popen, TimeoutExpired, CompletedProcess
 from typing import Any, override
 import time
 
@@ -8,7 +8,7 @@ from pywarden.api import ApiControl, ApiConnection, ApiState, AttachmentsService
 
 
 class LocalApiControl(ApiControl):
-  process: Popen
+  process: Popen[bytes]
 
   def __init__(self, process: Popen, state: ApiState, attachments: AttachmentsService, items: ItemsService, misc: MiscService) -> None:
     super().__init__(state, attachments, items, misc)
@@ -16,9 +16,9 @@ class LocalApiControl(ApiControl):
 
   @override
   @staticmethod
-  def create(process: Popen, scheme: str, host: str, port: int) -> LocalApiControl:
+  def create(process: Popen, host: str, port: int) -> LocalApiControl:
     state = ApiState()
-    conn = ApiConnection(state, scheme=scheme, host=host, port=port)
+    conn = ApiConnection(state, scheme='http', host=host, port=port)
     return LocalApiControl(
       process=process,
       state=state,
@@ -39,17 +39,19 @@ class LocalApiControl(ApiControl):
       self.process.wait(timeout_secs)
     except TimeoutExpired:
       raise TimeoutError(f"API server did not exit after {timeout_secs} seconds")
+    
+  def is_alive(self) -> bool:
+    return self.process.poll() is None
 
 
   def wait_until_ready(self, timeout_secs: float|None = None):
     t0 = time.perf_counter()
 
-    if timeout_secs is None:
-      while not self.is_reachable():
-        time.sleep(0.1)
-      return
-
-    while time.perf_counter() - t0 < timeout_secs:
+    while timeout_secs is None or time.perf_counter() - t0 < timeout_secs:
+      if not self.is_alive():
+        _, stderr = self.process.communicate()
+        print(stderr)
+        raise TimeoutError(f"API server process is dead")
       if self.is_reachable():
         break
       time.sleep(0.1)

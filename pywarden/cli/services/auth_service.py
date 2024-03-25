@@ -2,7 +2,7 @@ from typing import Any, cast
 
 from ..service import Service
 from ..login_credentials import EmailCredentials
-from ..cli_responses import StatusResponse, AuthenticatedStatusResponse
+from ..cli_responses import StatusResponse, AuthStatusResponse
 
 
 class AuthService(Service):

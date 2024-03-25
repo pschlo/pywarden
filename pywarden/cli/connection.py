@@ -36,7 +36,6 @@ class CliConnection:
     self,
     command: Sequence[str],
     *,
-    input: bytes|None = None,
     background: Literal[True],
   ) -> Popen[bytes]: ...
   
@@ -45,8 +44,8 @@ class CliConnection:
     self,
     command: Sequence[str],
     *,
-    input: bytes|None = None,
     background: Literal[False] = False,
+    input: bytes|None = None,
   ) -> CompletedProcess[bytes]: ...
 
 
@@ -54,8 +53,8 @@ class CliConnection:
     self,
     command: Sequence[str],
     *,
-    input: bytes|None = None,
     background: bool = False,
+    input: bytes|None = None,
   ) -> Popen[bytes] | CompletedProcess[bytes]:
     
     proc = Popen([str(self.state.cli_path), *command], stdin=PIPE, stdout=PIPE, stderr=PIPE, env=self.get_env())

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from subprocess import Popen
+from subprocess import Popen, CalledProcessError
 import subprocess
 import json
 from pathlib import Path
@@ -10,7 +10,7 @@ import time
 import requests
 import math
 
-from pywarden.cli import CliControl, StatusResponse, AuthenticatedStatusResponse, CliState, CliConnection, EmailCredentials
+from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, CliState, CliConnection, EmailCredentials
 from pywarden.api import ApiConnection, ApiState
 from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
@@ -30,27 +30,17 @@ class BitwardenControl(ContextManager):
 
     self.wait_until_ready(timeout_secs)
 
-
   @staticmethod
-  def create(
+  def create_from_cli(
+    cli: CliControl,
     api_config: ApiConfig,
-    cli_config: CliConfig,
     master_password: str,
     credentials: EmailCredentials|None = None,
     logout_on_shutdown: bool = True
   ) -> BitwardenControl:
-
-    print("Creating CLI control")
-    cli = CliControl.create(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir)
-    status = cli.get_status()
-    print(cli.get_formatted_status(status))
-
-    # set config
-    if cli_config.server is not None:
-      cli.set_server(cli_config.server, status=status)
-      status = cli.get_status()
     
     # prepare for API
+    status = cli.get_status()
 
     if credentials is not None:
       cli.login(credentials, status)
@@ -66,9 +56,38 @@ class BitwardenControl(ContextManager):
     process = cli.serve_api(port=api_config.port, host=api_config.hostname)
 
     # create API object
-    api = LocalApiControl.create(process, scheme='http', port=api_config.port, host=api_config.hostname)
+    api = LocalApiControl.create(process, port=api_config.port, host=api_config.hostname)
 
     return BitwardenControl(api, cli, timeout_secs=api_config.startup_timeout_secs, logout_on_shutdown=logout_on_shutdown)
+
+
+  @staticmethod
+  def create(
+    cli_config: CliConfig,
+    api_config: ApiConfig,
+    master_password: str,
+    credentials: EmailCredentials|None = None,
+    logout_on_shutdown: bool = True
+  ) -> BitwardenControl:
+
+    print("Creating CLI control")
+    cli = CliControl.create(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir)
+    status = cli.get_status()
+
+    # set config
+    if cli_config.server is not None:
+      cli.set_server(cli_config.server, status=status)
+      status = cli.get_status()
+
+    return BitwardenControl.create_from_cli(
+      cli=cli,
+      api_config=api_config,
+      master_password=master_password,
+      credentials=credentials,
+      logout_on_shutdown=logout_on_shutdown
+    )
+    
+
 
   def __enter__(self) -> BitwardenControl:
     return self
@@ -98,12 +117,12 @@ class BitwardenControl(ContextManager):
     print(f"  Locking vault")
     try:
       self.cli.lock()
-    except TimeoutError as e:
-      print(f"TimeoutError: {e}")
+    except (TimeoutError, CalledProcessError) as e:
+      print(f"{e.__class__.__name__}: {e}")
 
     if logout:
       print(f"  Logging out")
       try:
         self.cli.logout()
-      except TimeoutError as e:
-        print(f"TimeoutError: {e}")
+      except (TimeoutError, CalledProcessError) as e:
+        print(f"{e.__class__.__name__}: {e}")
