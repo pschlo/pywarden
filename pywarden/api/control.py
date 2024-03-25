@@ -32,7 +32,8 @@ class ApiControl:
 
 
   @staticmethod
-  def create(state: ApiState, scheme: str, host: str, port: int) -> ApiControl:
+  def create(scheme: str, host: str, port: int) -> ApiControl:
+    state = ApiState()
     conn = ApiConnection(state, scheme=scheme, host=host, port=port)
     return ApiControl(
       state=state,

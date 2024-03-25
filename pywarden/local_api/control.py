@@ -16,7 +16,8 @@ class LocalApiControl(ApiControl):
 
   @override
   @staticmethod
-  def create(process: Popen, state: ApiState, scheme: str, host: str, port: int) -> LocalApiControl:
+  def create(process: Popen, scheme: str, host: str, port: int) -> LocalApiControl:
+    state = ApiState()
     conn = ApiConnection(state, scheme=scheme, host=host, port=port)
     return LocalApiControl(
       process=process,

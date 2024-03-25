@@ -41,8 +41,7 @@ class BitwardenControl(ContextManager):
   ) -> BitwardenControl:
 
     print("Creating CLI control")
-    state = CliState(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir)
-    cli = CliControl.create(state)
+    cli = CliControl.create(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir)
     status = cli.get_status()
     print(cli.get_formatted_status(status))
 
@@ -67,8 +66,7 @@ class BitwardenControl(ContextManager):
     process = cli.serve_api(port=api_config.port, host=api_config.hostname)
 
     # create API object
-    state = ApiState()
-    api = LocalApiControl.create(process, state, scheme='http', port=api_config.port, host=api_config.hostname)
+    api = LocalApiControl.create(process, scheme='http', port=api_config.port, host=api_config.hostname)
 
     return BitwardenControl(api, cli, timeout_secs=api_config.startup_timeout_secs, logout_on_shutdown=logout_on_shutdown)
 

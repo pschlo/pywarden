@@ -128,7 +128,12 @@ class CliControl:
     return r
 
   @staticmethod
-  def create(state: CliState) -> CliControl:
+  def create(cli_path: Path, session_key: str|None = None, data_dir: Path|None = None) -> CliControl:
+    state = CliState(
+      cli_path = cli_path,
+      session_key = session_key,
+      data_dir = data_dir
+    )
     conn = CliConnection(state)
     return CliControl(
       state=state,
