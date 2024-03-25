@@ -87,7 +87,7 @@ class CliControl:
       status = self.get_status()
 
     # can only change server if not logged in
-    if url != self.get_status()['serverUrl'] and self.is_logged_in(status):
+    if url != status['serverUrl'] and self.is_logged_in(status):
       print(f"Cannot change server to {url} when logged in, logging out")
       self.logout()
     self._config_service.set_server(url)
