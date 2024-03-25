@@ -47,7 +47,8 @@ class BitwardenControl(ContextManager):
     else:
       if not cli.is_logged_in(status):
         raise RuntimeError(f"Not logged in and no login credentials provided")
-      print("No credentials provided, using authenticated account")
+      status = cast(AuthStatusResponse, status)
+      print(f"No credentials provided, using authenticated account '{status['userEmail']}'")
 
     print("Unlocking vault")
     cli.unlock(master_password)
@@ -71,13 +72,7 @@ class BitwardenControl(ContextManager):
   ) -> BitwardenControl:
 
     print("Creating CLI control")
-    cli = CliControl.create(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir)
-    status = cli.get_status()
-
-    # set config
-    if cli_config.server is not None:
-      cli.set_server(cli_config.server, status=status)
-      status = cli.get_status()
+    cli = CliControl.create(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir, server=cli_config.server)
 
     return BitwardenControl.create_from_cli(
       cli=cli,
@@ -87,7 +82,6 @@ class BitwardenControl(ContextManager):
       logout_on_shutdown=logout_on_shutdown
     )
     
-
 
   def __enter__(self) -> BitwardenControl:
     return self

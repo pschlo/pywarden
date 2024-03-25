@@ -7,6 +7,7 @@ from .connection import CliConnection
 from .login_credentials import EmailCredentials
 from .cli_responses import StatusResponse, AuthStatusResponse, DEFAULT_SERVER
 from .state import CliState
+from .cli_responses import DEFAULT_SERVER
 
 
 class CliControl:
@@ -23,7 +24,8 @@ class CliControl:
     import_export_service: ImportExportService,
     api_service: ApiService,
     misc_service: MiscService,
-    config_service: ConfigService
+    config_service: ConfigService,
+    server: str = DEFAULT_SERVER,
   ) -> None:
     self.state = state
     self._auth_service = auth_service
@@ -37,6 +39,9 @@ class CliControl:
     self.serve_api = self._api_service.serve
     self.get_status = self._misc_service.get_status
     self.get_server = self._config_service.get_server
+
+    # apply config stuff
+    self.set_server(server)
 
     print(self.get_formatted_status())
 
@@ -130,7 +135,7 @@ class CliControl:
     return r
 
   @staticmethod
-  def create(cli_path: Path, session_key: str|None = None, data_dir: Path|None = None) -> CliControl:
+  def create(cli_path: Path, server: str = DEFAULT_SERVER, session_key: str|None = None, data_dir: Path|None = None) -> CliControl:
     state = CliState(
       cli_path = cli_path,
       session_key = session_key,
@@ -143,5 +148,6 @@ class CliControl:
       import_export_service=ImportExportService(conn),
       api_service=ApiService(conn),
       misc_service=MiscService(conn),
-      config_service=ConfigService(conn)
+      config_service=ConfigService(conn),
+      server=server
     )

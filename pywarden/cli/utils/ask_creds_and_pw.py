@@ -13,10 +13,8 @@ def ask_creds_and_pw(cli: CliControl, email: str|None = None) -> tuple[EmailCred
 
   if cli.is_logged_in(status) and cast(AuthStatusResponse, status)['userEmail'] == email:
     creds = None
-    master_password = ask_master_password()
+    master_password = ask_master_password(email)
   else:
-    if email is not None:
-      print(f"Logging in as {email}")
     creds = ask_email_credentials(email)
     # login(creds)
     master_password = creds['password']
