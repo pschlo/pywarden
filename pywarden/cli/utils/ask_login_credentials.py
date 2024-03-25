@@ -11,12 +11,10 @@ def ask_email_credentials(email: str|None=None) -> EmailCredentials:
     while (r is None) or not len(r) > 0:
       r = input("Email: ").strip()
     email = r
-  else:
-    print(f"Getting credentials for {email}")
   
   r = None
   while (r is None) or not len(r) > 0:
-    r = getpass(f"Password [input hidden]: ")
+    r = getpass(f"Password {f'for {email} ' if email is not None else ''}[input hidden]: ")
   password = r
 
   r = None
