@@ -66,7 +66,9 @@ class BitwardenControl:
 
 
   def login(self, creds: EmailCredentials) -> ContextManager:
-    self.cli.login(creds)
+    status = self.status()
+    print(f"Logging in as {creds['email']} at {self.cli.get_server()}")
+    self.cli.login(creds, status)
     self._start_api()
     return self._login_session()
 
@@ -79,11 +81,13 @@ class BitwardenControl:
   
     
   def logout(self) -> None:
+    print("Logging out")
     self._stop_api()
     self.cli.logout()
 
   # unlock API and CLI
   def unlock(self, password: str) -> ContextManager:
+    print(f"Unlocking vault")
     session_key = self.api.unlock(password)['data']['raw']
     self.cli.session_key = session_key
     return self._unlock_session()
@@ -96,6 +100,7 @@ class BitwardenControl:
       self.lock()
 
   def lock(self) -> None:
+    print(f"Locking vault")
     self.cli.lock()
     if self._api is not None:
       self._api.lock()

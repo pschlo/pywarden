@@ -63,10 +63,6 @@ class CliControl:
     if self.is_logged_in(status):
       print(f"Already authenticated, logging out and back in")
       self.logout()
-      self.login(creds)
-      return
-
-    print(f"Logging in as {creds['email']} on {self.get_server()}")
     self._auth_service.login(creds)
 
   def logout(self):
