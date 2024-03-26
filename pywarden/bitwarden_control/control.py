@@ -88,8 +88,8 @@ class BitwardenControl:
   # unlock API and CLI
   def unlock(self, password: str) -> ContextManager:
     print(f"Unlocking vault")
-    session_key = self.api.unlock(password)['data']['raw']
-    self.cli.session_key = session_key
+    key = self.api.unlock(password)
+    self.cli.session_key = key
     return self._unlock_session()
 
   @contextmanager

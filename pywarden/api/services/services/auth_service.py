@@ -8,6 +8,7 @@ class AuthService(Service):
   def lock(self):
     self.conn.post('/lock')
 
-  def unlock(self, password: str) -> Any:
+  # returns the session key
+  def unlock(self, password: str) -> str:
     r = self.conn.post('/unlock', json={'password': password})
-    return r.json()
+    return r.json()['data']['raw']

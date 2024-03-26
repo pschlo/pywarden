@@ -7,51 +7,24 @@ from ..service import Service
 
 
 class ItemsService(Service):
-  def getAll(self) -> GetAllResponse:
-    resp = self.conn.get('/list/object/items')
-    json = resp.json()
-
-    if json['success']:
-      items = json['data']['data']
-      for item in items:
-        fix_item(item)
-
-    return json
-
-  def deleteItem(self, id: str) -> DeleteItemResponse:
-    resp = self.conn.delete(f'/object/item/{id}')
-    return resp.json()
-  
-  def getItem(self, id: str) -> GetItemResponse:
-    resp = self.conn.get(f'/object/item/{id}')
-    json = resp.json()
-
-    if json['success']:
-      item = json['data']
+  def getAll(self) -> list[Item]:
+    r = self.conn.get('/list/object/items')
+    items = r.json()['data']['data']
+    for item in items:
       fix_item(item)
+    return items
 
-    return json
+  def deleteItem(self, id: str) -> None:
+    r = self.conn.delete(f'/object/item/{id}')
+  
+  def getItem(self, id: str) -> Item:
+    r = self.conn.get(f'/object/item/{id}')
+    item = r.json()['data']
+    fix_item(item)
+    return item
   
 
 def fix_item(item):
   # ensure that attachments key is always set
   if 'attachments' not in item:
     item['attachments'] = []
-
-
-class GetAllResponse(TypedDict):
-  success: bool
-  data: GetAllResponseData
-
-class GetAllResponseData(TypedDict):
-  object: str
-  data: list[Item]
-
-class DeleteItemResponse(TypedDict):
-  success: bool
-
-class GetItemResponse(TypedDict):
-  success: bool
-  data: Item
-  revisionDate: str
-  deleteDate: str|None
