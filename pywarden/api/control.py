@@ -1,7 +1,7 @@
 from __future__ import annotations
 import requests
 
-from .services import AttachmentsService, ItemsService, MiscService
+from .services import AttachmentsService, ItemsService, MiscService, AuthService
 from .connection import ApiConnection
 from .state import ApiState
 
@@ -11,12 +11,14 @@ class ApiControl:
     state: ApiState,
     attachments: AttachmentsService,
     items: ItemsService,
-    misc: MiscService
+    misc: MiscService,
+    auth: AuthService
   ) -> None:
     self.state = state
     self._attachments = attachments
     self._items = items
     self._misc = misc
+    self._auth = auth
 
     # method shortcuts
     self.add_attachment = self._attachments.add_attachment
@@ -30,6 +32,9 @@ class ApiControl:
     self.status = self._misc.status
     self.sync = self._misc.sync
 
+    self.lock = self._auth.lock
+    self.unlock = self._auth.unlock
+
 
   @staticmethod
   def create(scheme: str, host: str, port: int) -> ApiControl:
@@ -39,7 +44,8 @@ class ApiControl:
       state=state,
       attachments = AttachmentsService(conn),
       items = ItemsService(conn),
-      misc = MiscService(conn)
+      misc = MiscService(conn),
+      auth = AuthService(conn)
     )
   
   def is_reachable(self) -> bool:

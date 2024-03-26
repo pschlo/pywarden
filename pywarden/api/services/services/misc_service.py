@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TypedDict, Any
 
+from pywarden.constants import AuthStatusResponse, DEFAULT_SERVER
 from ..service import Service
 
 
@@ -9,27 +10,15 @@ class MiscService(Service):
     resp = self.conn.post('/sync')
     return resp.json()
   
-  def status(self) -> StatusResponse:
-    resp = self.conn.get('/status')
-    return resp.json()
+  def status(self) -> AuthStatusResponse:
+    r = self.conn.get('/status')
+    data = r.json()['data']['template']
+    # fix serverUrl of None
+    if 'serverUrl' in data and data['serverUrl'] is None:
+      data['serverUrl'] = DEFAULT_SERVER
+    return data
 
 
 class SyncResponse(TypedDict):
   success: bool
   data: Any
-
-
-class StatusResponse(TypedDict):
-  success: bool
-  data: StatusResponseData
-
-class StatusResponseData(TypedDict):
-  object: str
-  template: StatusResponseDataTemplate
-
-class StatusResponseDataTemplate(TypedDict):
-  serverUrl: str
-  lastSync: str
-  userEmail: str
-  userID: str
-  status: str

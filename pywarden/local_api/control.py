@@ -4,14 +4,14 @@ from typing import Any, override
 import time
 
 
-from pywarden.api import ApiControl, ApiConnection, ApiState, AttachmentsService, ItemsService, MiscService
+from pywarden.api import ApiControl, ApiConnection, ApiState, AttachmentsService, ItemsService, MiscService, AuthService
 
 
 class LocalApiControl(ApiControl):
   process: Popen[bytes]
 
-  def __init__(self, process: Popen, state: ApiState, attachments: AttachmentsService, items: ItemsService, misc: MiscService) -> None:
-    super().__init__(state, attachments, items, misc)
+  def __init__(self, process: Popen, state: ApiState, attachments: AttachmentsService, items: ItemsService, misc: MiscService, auth: AuthService) -> None:
+    super().__init__(state, attachments, items, misc, auth)
     self.process = process
 
   @override
@@ -24,17 +24,13 @@ class LocalApiControl(ApiControl):
       state=state,
       attachments = AttachmentsService(conn),
       items = ItemsService(conn),
-      misc = MiscService(conn)
+      misc = MiscService(conn),
+      auth = AuthService(conn)
     )
   
 
   def shutdown(self, timeout_secs: float|None = None) -> None:
     self.process.terminate()
-
-    if timeout_secs is None:
-      self.process.wait()
-      return
-    
     try:
       self.process.wait(timeout_secs)
     except TimeoutExpired:

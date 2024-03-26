@@ -1,6 +1,6 @@
 
 from ..service import Service
-from ..cli_responses import DEFAULT_SERVER
+from pywarden.constants import DEFAULT_SERVER
 
 
 class ConfigService(Service):

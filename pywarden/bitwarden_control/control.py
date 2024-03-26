@@ -9,114 +9,143 @@ from collections.abc import Sequence
 import time
 import requests
 import math
+from contextlib import contextmanager
 
 from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, CliState, CliConnection, EmailCredentials
 from pywarden.api import ApiConnection, ApiState
+from pywarden.utils import ask_email_credentials, ask_master_password
 from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
 from .cli_config import CliConfig
 
 
-class BitwardenControl(ContextManager):
-  api: LocalApiControl
+"""
+api property is set iff api server running iff logged in
+"""
+class BitwardenControl:
+  _api: LocalApiControl|None = None
   cli: CliControl
-  logout_on_shutdown: bool
+  api_conf: ApiConfig
+
+  @property
+  def api(self) -> LocalApiControl:
+    if self._api is None:
+      raise RuntimeError(f"Cannot access API when logged out")
+    return self._api
 
 
-  def __init__(self, api: LocalApiControl, cli: CliControl, *, timeout_secs: float|None = None, logout_on_shutdown: bool) -> None:
-    self.api = api
+  def __init__(self, cli: CliControl, api_conf: ApiConfig) -> None:
     self.cli = cli
-    self.logout_on_shutdown = logout_on_shutdown
+    self.api_conf = api_conf
 
-    self.wait_until_ready(timeout_secs)
+    if cli.is_logged_in():
+      self._start_api()
 
-  @staticmethod
-  def create_from_cli(
-    cli: CliControl,
-    api_config: ApiConfig,
-    master_password: str,
-    credentials: EmailCredentials|None = None,
-    logout_on_shutdown: bool = True
-  ) -> BitwardenControl:
-    
-    # prepare for API
-    status = cli.get_status()
-
-    if credentials is not None:
-      cli.login(credentials, status)
-    else:
-      if not cli.is_logged_in(status):
-        raise RuntimeError(f"Not logged in and no login credentials provided")
-      status = cast(AuthStatusResponse, status)
-      print(f"No credentials provided, using authenticated account '{status['userEmail']}'")
-
-    print("Unlocking vault")
-    cli.unlock(master_password)
-    
-    print("Starting API")
-    process = cli.serve_api(port=api_config.port, host=api_config.hostname)
-
-    # create API object
-    api = LocalApiControl.create(process, port=api_config.port, host=api_config.hostname)
-
-    return BitwardenControl(api, cli, timeout_secs=api_config.startup_timeout_secs, logout_on_shutdown=logout_on_shutdown)
+    self.get_export = self.cli.get_export
 
 
   @staticmethod
   def create(
     cli_config: CliConfig,
-    api_config: ApiConfig,
-    master_password: str,
-    credentials: EmailCredentials|None = None,
-    logout_on_shutdown: bool = True
+    api_conf: ApiConfig,
   ) -> BitwardenControl:
-
     print("Creating CLI control")
     cli = CliControl.create(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir, server=cli_config.server)
-
-    return BitwardenControl.create_from_cli(
-      cli=cli,
-      api_config=api_config,
-      master_password=master_password,
-      credentials=credentials,
-      logout_on_shutdown=logout_on_shutdown
-    )
-    
-
-  def __enter__(self) -> BitwardenControl:
-    return self
+    return BitwardenControl(cli, api_conf)
   
-  def __exit__(self, typ, val, tb) -> None:
-    self.shutdown()
+  def _start_api(self) -> None:
+    print(f"Starting API server")
+    process = self.cli.serve_api(host=self.api_conf.hostname, port=self.api_conf.port)
+    self._api = LocalApiControl.create(process, host=self.api_conf.hostname, port=self.api_conf.port)
+    self.api.wait_until_ready()
 
-  def wait_until_ready(self, timeout_secs: float|None = None):
+  def _stop_api(self) -> None:
+    print(f"Stopping API server")
+    self.api.shutdown()
+    self._api = None
+
+
+  def login(self, creds: EmailCredentials) -> ContextManager:
+    self.cli.login(creds)
+    self._start_api()
+    return self._login_session()
+
+  @contextmanager
+  def _login_session(self):
     try:
-      self.api.wait_until_ready(timeout_secs)
-    except TimeoutError:
-      self.shutdown()
-      raise
+      yield
+    finally:
+      self.logout()
+  
+    
+  def logout(self) -> None:
+    self._stop_api()
+    self.cli.logout()
 
-  def shutdown(self, logout: bool|None = None) -> None:
-    if logout is None:
-      logout = self.logout_on_shutdown
+  # unlock API and CLI
+  def unlock(self, password: str) -> ContextManager:
+    session_key = self.api.unlock(password)['data']['raw']
+    self.cli.session_key = session_key
+    return self._unlock_session()
 
-    print(f"Shutting down Bitwarden Control")
-
-    print(f"  Stopping API")
+  @contextmanager
+  def _unlock_session(self):
     try:
-      self.api.shutdown()
-    except TimeoutError as e:
-      print(f"TimeoutError: {e}")
+      yield
+    finally:
+      self.lock()
 
-    print(f"  Locking vault")
+  def lock(self) -> None:
+    self.cli.lock()
+    if self._api is not None:
+      self._api.lock()
+
+  def status(self) -> StatusResponse:
+    if self._api is not None:
+      return self._api.status()
+    else:
+      return self.cli.status()
+    
+  def is_logged_in(self, status: StatusResponse|None = None) -> bool:
+    if status is None:
+      status = self.status()
+    return status['status'] != 'unauthenticated'
+
+  def is_locked(self, status: StatusResponse|None = None) -> bool:
+    if status is None:
+      status = self.status()
+    return status['status'] != 'unlocked'
+
+
+  def login_unlock_interactive(self, email: str|None = None) -> ContextManager:
+    status = self.status()
+
+    if email is None:
+      r = None
+      while (r is None) or not len(r) > 0:
+        r = input("Email: ").strip()
+      email = r
+
+    if self.is_logged_in(status) and cast(AuthStatusResponse, status)['userEmail'] == email and status['serverUrl'] == self.cli.get_server():
+      # already logged in
+      self.unlock(ask_master_password(email))
+      return self._login_unlock_session(logout=False)
+    else:
+      # not logged in or logged in as wrong user
+      creds = ask_email_credentials(email)
+      self.login(creds)
+      self.unlock(creds['password'])
+      return self._login_unlock_session(logout=True)    
+
+  @contextmanager
+  def _login_unlock_session(self, logout: bool):
     try:
-      self.cli.lock()
-    except (TimeoutError, CalledProcessError) as e:
-      print(f"{e.__class__.__name__}: {e}")
+      yield
+    finally:
+      self.lock()
+      if logout:
+        self.logout()
 
-    if logout:
-      print(f"  Logging out")
-      try:
-        self.cli.logout()
-      except (TimeoutError, CalledProcessError) as e:
-        print(f"{e.__class__.__name__}: {e}")
+
+  def get_items(self):
+    return self.api.get_items()

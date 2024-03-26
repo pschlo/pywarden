@@ -5,7 +5,7 @@ from typing import Any, overload, Literal
 from collections.abc import Sequence
 import os
 
-from .cli_responses import StatusResponse
+from pywarden.constants import StatusResponse
 from .state import CliState
 
 

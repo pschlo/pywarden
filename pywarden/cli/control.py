@@ -4,10 +4,9 @@ from pathlib import Path
 
 from .services import AuthService, ImportExportService, MiscService, ApiService, ConfigService
 from .connection import CliConnection
-from .login_credentials import EmailCredentials
-from .cli_responses import StatusResponse, AuthStatusResponse, DEFAULT_SERVER
+from pywarden.login_credentials import EmailCredentials
+from pywarden.constants import StatusResponse, AuthStatusResponse, DEFAULT_SERVER
 from .state import CliState
-from .cli_responses import DEFAULT_SERVER
 
 
 class CliControl:
@@ -37,29 +36,29 @@ class CliControl:
     # method shortcuts
     self.get_export = self._import_export_service.get_export
     self.serve_api = self._api_service.serve
-    self.get_status = self._misc_service.get_status
+    self.status = self._misc_service.status
     self.get_server = self._config_service.get_server
 
     # apply config stuff
     self.set_server(server)
 
-    print(self.get_formatted_status())
+    print(self.formatted_status())
 
 
   def is_logged_in(self, status: StatusResponse|None = None):
     if status is None:
-      status = self.get_status()
+      status = self.status()
     return status['status'] != 'unauthenticated'
 
   def is_locked(self, status: StatusResponse|None = None):
     if status is None:
-      status = self.get_status()
+      status = self.status()
     return status['status'] != 'unlocked'
 
 
   def login(self, creds: EmailCredentials, status: StatusResponse|None = None):
     if status is None:
-      status = self.get_status()
+      status = self.status()
 
     if self.is_logged_in(status):
       print(f"Already authenticated, logging out and back in")
@@ -84,7 +83,7 @@ class CliControl:
 
   def set_server(self, url: str, status: StatusResponse|None = None):
     if status is None:
-      status = self.get_status()
+      status = self.status()
 
     # can only change server if not logged in
     if url != status['serverUrl'] and self.is_logged_in(status):
@@ -117,9 +116,9 @@ class CliControl:
     self.state.data_dir = value
   
 
-  def get_formatted_status(self, status: StatusResponse|None = None) -> str:
+  def formatted_status(self, status: StatusResponse|None = None) -> str:
     if status is None:
-      status = self.get_status()
+      status = self.status()
 
     r = 'Current Status: '
     if self.is_logged_in(status):
