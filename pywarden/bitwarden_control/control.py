@@ -46,18 +46,18 @@ class BitwardenControl:
 
   @staticmethod
   def create(
-    cli_config: CliConfig,
+    cli_conf: CliConfig,
     api_conf: ApiConfig,
   ) -> BitwardenControl:
     print("Creating CLI control")
-    cli = CliControl.create(cli_path=cli_config.cli_path, data_dir=cli_config.data_dir, server=cli_config.server)
+    cli = CliControl.create(cli_path=cli_conf.cli_path, data_dir=cli_conf.data_dir, server=cli_conf.server)
     return BitwardenControl(cli, api_conf)
   
   def _start_api(self) -> None:
     print(f"Starting API server")
     process = self.cli.serve_api(host=self.api_conf.hostname, port=self.api_conf.port)
     self._api = LocalApiControl.create(process, host=self.api_conf.hostname, port=self.api_conf.port)
-    self.api.wait_until_ready()
+    self.api.wait_until_ready(timeout_secs=self.api_conf.startup_timeout_secs)
 
   def _stop_api(self) -> None:
     print(f"Stopping API server")
