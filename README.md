@@ -23,3 +23,5 @@ This will:
 * unlock vault
 * print all item names
 * for each login item, also print username and password
+* lock the vault
+* if we had to log in previously, log back out
