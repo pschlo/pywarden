@@ -46,20 +46,16 @@ class CliControl:
 
 
   def is_logged_in(self, status: StatusResponse|None = None):
-    if status is None:
-      status = self.status()
+    status = status or self.status()
     return status['status'] != 'unauthenticated'
 
   def is_locked(self, status: StatusResponse|None = None):
-    if status is None:
-      status = self.status()
+    status = status or self.status()
     return status['status'] != 'unlocked'
 
 
   def login(self, creds: EmailCredentials, status: StatusResponse|None = None):
-    if status is None:
-      status = self.status()
-
+    status = status or self.status()
     if self.is_logged_in(status):
       print(f"Already authenticated, logging out and back in")
       self.logout()
@@ -78,9 +74,7 @@ class CliControl:
 
 
   def set_server(self, url: str, status: StatusResponse|None = None):
-    if status is None:
-      status = self.status()
-
+    status = status or self.status()
     # can only change server if not logged in
     if url != status['serverUrl'] and self.is_logged_in(status):
       print(f"Cannot change server to {url} when logged in, logging out")
@@ -113,8 +107,7 @@ class CliControl:
   
 
   def formatted_status(self, status: StatusResponse|None = None) -> str:
-    if status is None:
-      status = self.status()
+    status = status or self.status()
 
     r = 'Current Status: '
     if self.is_logged_in(status):
