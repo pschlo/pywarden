@@ -43,9 +43,12 @@ class LoggedInControl:
       key = self.api.unlock(password)
       self.cli.session_key = key
       c = UnlockedControl(self.cli, self.api)
-    finally:
-      self.api.lock()
-      self.cli.lock()
+    except:
+      try: self.api.lock
+      except Exception as e: print(f"{e.__class__.__name__}: {e}")
+      try: self.cli.lock()
+      except Exception as e: print(f"{e.__class__.__name__}: {e}")
+      raise
 
     try:
       yield c

@@ -42,8 +42,10 @@ class BitwardenControl:
     try:
       self.cli.login(creds, status)
       c = LoggedInControl.create(self.cli, self.api_conf)
-    finally:
-      self.cli.logout()
+    except:
+      try: self.cli.logout()
+      except Exception as e: print(f"{e.__class__.__name__}: {e}")
+      raise
 
     try:
       yield c
