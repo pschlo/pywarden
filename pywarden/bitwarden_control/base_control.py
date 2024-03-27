@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, cast
+from typing import Any, cast, overload
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -17,21 +17,20 @@ class BitwardenControl:
   cli: CliControl
   api_conf: ApiConfig
 
-  def __init__(self, cli: CliControl, api_conf: ApiConfig) -> None:
+
+  @overload
+  def __init__(self, cli: CliConfig, api: ApiConfig): ...
+  @overload
+  def __init__(self, cli: CliControl, api: ApiConfig): ...
+  def __init__(self, cli: CliControl|CliConfig, api: ApiConfig) -> None:
+    if isinstance(cli, CliConfig):
+      conf = cli
+      print("Creating CLI control")
+      cli = CliControl.create(cli_path=conf.cli_path, data_dir=conf.data_dir, server=conf.server)
+
     self.cli = cli
-    self.api_conf = api_conf
-
+    self.api_conf = api
     self.status = self.cli.status
-
-
-  @staticmethod
-  def create(
-    cli_conf: CliConfig,
-    api_conf: ApiConfig,
-  ) -> BitwardenControl:
-    print("Creating CLI control")
-    cli = CliControl.create(cli_path=cli_conf.cli_path, data_dir=cli_conf.data_dir, server=cli_conf.server)
-    return BitwardenControl(cli, api_conf)
   
 
   @contextmanager
@@ -41,7 +40,7 @@ class BitwardenControl:
 
     try:
       self.cli.login(creds, status)
-      c = LoggedInControl.create(self.cli, self.api_conf)
+      c = LoggedInControl(self.cli, self.api_conf)
     except:
       try: self.cli.logout()
       except Exception as e: print(f"{e.__class__.__name__}: {e}")
@@ -55,7 +54,7 @@ class BitwardenControl:
 
   @contextmanager
   def as_logged_in(self) -> Iterator[LoggedInControl]:
-    c = LoggedInControl.create(self.cli, self.api_conf)
+    c = LoggedInControl(self.cli, self.api_conf)
     try:
       yield c
     finally:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, overload
 from collections.abc import Iterator
 from pywarden.cli import CliControl
 from pywarden.api import ApiControl
@@ -13,19 +13,23 @@ class LoggedInControl:
   cli: CliControl
   api: ApiControl
 
-  def __init__(self, cli: CliControl, api: ApiControl) -> None:
+
+  @overload
+  def __init__(self, cli: CliControl, api: ApiControl): ...
+  @overload
+  def __init__(self, cli: CliControl, api: ApiConfig): ...
+  def __init__(self, cli: CliControl, api: ApiControl|ApiConfig) -> None:
+    if isinstance(api, ApiConfig):
+      conf = api
+      print(f"Starting API server")
+      proc = cli.serve_api(host=conf.hostname, port=conf.port)
+      api = ApiControl.create(proc, host=conf.hostname, port=conf.port)
+      api.wait_until_ready(timeout_secs=conf.startup_timeout_secs)
+    
     self.cli = cli
     self.api = api
-
     self.status = self.api.status
 
-  @staticmethod
-  def create(cli: CliControl, api_conf: ApiConfig) -> LoggedInControl:
-    print(f"Starting API server")
-    proc = cli.serve_api(host=api_conf.hostname, port=api_conf.port)
-    api = ApiControl.create(proc, host=api_conf.hostname, port=api_conf.port)
-    api.wait_until_ready(timeout_secs=api_conf.startup_timeout_secs)
-    return LoggedInControl(cli, api)
 
   def logout(self) -> None:
     print(f"Logging out")
