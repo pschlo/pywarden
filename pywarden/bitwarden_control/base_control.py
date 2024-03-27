@@ -1,24 +1,13 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from subprocess import Popen, CalledProcessError
-import subprocess
-import json
-from pathlib import Path
-from typing import Any, ContextManager, TypedDict, Literal, cast, Iterator, Iterable
-from collections.abc import Sequence
-import time
-import requests
-import math
+from typing import Any, cast
+from collections.abc import Iterator
 from contextlib import contextmanager
 
-from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, CliState, CliConnection, EmailCredentials
-from pywarden.api import ApiConnection, ApiState
+from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, EmailCredentials
 from pywarden.utils import ask_email_credentials, ask_master_password
-from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
 from .cli_config import CliConfig
-import requests
-from .auth_control import LoggedInControl, UnlockedControl
+from .logged_in_control import LoggedInControl, UnlockedControl
 
 
 """

@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from pywarden.cli import CliControl
 from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
+from .unlocked_control import UnlockedControl
 
 
 class LoggedInControl:
@@ -42,15 +43,3 @@ class LoggedInControl:
       yield c
     finally:
       c.lock()
-
-
-
-
-
-class UnlockedControl(LoggedInControl):
-  def get_items(self):
-    return self.api.get_items()
-  
-  def lock(self) -> None:
-    print(f"Locking vault")
-    self.api.lock()
