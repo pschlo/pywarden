@@ -4,7 +4,7 @@ from subprocess import Popen, CalledProcessError
 import subprocess
 import json
 from pathlib import Path
-from typing import Any, ContextManager, TypedDict, Literal, cast
+from typing import Any, ContextManager, TypedDict, Literal, cast, Iterator, Iterable
 from collections.abc import Sequence
 import time
 import requests
@@ -17,29 +17,20 @@ from pywarden.utils import ask_email_credentials, ask_master_password
 from pywarden.local_api import LocalApiControl
 from .local_api_config import ApiConfig
 from .cli_config import CliConfig
+import requests
+from .auth_control import LoggedInControl, UnlockedControl
 
 
 """
 api property is set iff api server running iff logged in
 """
 class BitwardenControl:
-  _api: LocalApiControl|None = None
   cli: CliControl
   api_conf: ApiConfig
-
-  @property
-  def api(self) -> LocalApiControl:
-    if self._api is None:
-      raise RuntimeError(f"Cannot access API when logged out")
-    return self._api
-
 
   def __init__(self, cli: CliControl, api_conf: ApiConfig) -> None:
     self.cli = cli
     self.api_conf = api_conf
-
-    if cli.is_logged_in():
-      self._start_api()
 
     self.get_export = self.cli.get_export
 
@@ -53,76 +44,35 @@ class BitwardenControl:
     cli = CliControl.create(cli_path=cli_conf.cli_path, data_dir=cli_conf.data_dir, server=cli_conf.server)
     return BitwardenControl(cli, api_conf)
   
-  def _start_api(self) -> None:
-    print(f"Starting API server")
-    process = self.cli.serve_api(host=self.api_conf.hostname, port=self.api_conf.port)
-    self._api = LocalApiControl.create(process, host=self.api_conf.hostname, port=self.api_conf.port)
-    self.api.wait_until_ready(timeout_secs=self.api_conf.startup_timeout_secs)
 
-  def _stop_api(self) -> None:
-    print(f"Stopping API server")
-    self.api.shutdown()
-    self._api = None
-
-
-  def login(self, creds: EmailCredentials) -> ContextManager:
+  @contextmanager
+  def login(self, creds: EmailCredentials) -> Iterator[LoggedInControl]:
     status = self.status()
     print(f"Logging in as {creds['email']} at {self.cli.get_server()}")
-    self.cli.login(creds, status)
-    self._start_api()
-    return self._login_session()
+    try:
+      self.cli.login(creds, status)
+      c = LoggedInControl.create(self.cli, self.api_conf)
+      yield c
+    finally:
+      c.stop_api()
+      c.logout()
 
   @contextmanager
-  def _login_session(self):
+  def as_logged_in(self) -> Iterator[LoggedInControl]:
     try:
-      yield
+      c = LoggedInControl.create(self.cli, self.api_conf)
+      yield c
     finally:
-      self.logout()
+      c.stop_api()
   
-    
-  def logout(self) -> None:
-    print("Logging out")
-    self._stop_api()
-    self.cli.logout()
-
-  # unlock API and CLI
-  def unlock(self, password: str) -> ContextManager:
-    print(f"Unlocking vault")
-    key = self.api.unlock(password)
-    self.cli.session_key = key
-    return self._unlock_session()
+  @contextmanager
+  def login_unlock(self, creds: EmailCredentials, password: str) -> Iterator[UnlockedControl]:
+    with self.login(creds) as a:
+      with a.unlock(password) as b:
+        yield b
 
   @contextmanager
-  def _unlock_session(self):
-    try:
-      yield
-    finally:
-      self.lock()
-
-  def lock(self) -> None:
-    print(f"Locking vault")
-    self.cli.lock()
-    if self._api is not None:
-      self._api.lock()
-
-  def status(self) -> StatusResponse:
-    if self._api is not None:
-      return self._api.status()
-    else:
-      return self.cli.status()
-    
-  def is_logged_in(self, status: StatusResponse|None = None) -> bool:
-    if status is None:
-      status = self.status()
-    return status['status'] != 'unauthenticated'
-
-  def is_locked(self, status: StatusResponse|None = None) -> bool:
-    if status is None:
-      status = self.status()
-    return status['status'] != 'unlocked'
-
-
-  def login_unlock_interactive(self, email: str|None = None) -> ContextManager:
+  def login_unlock_interactive(self, email: str|None = None) -> Iterator[UnlockedControl]:
     status = self.status()
 
     if email is None:
@@ -133,24 +83,26 @@ class BitwardenControl:
 
     if self.is_logged_in(status) and cast(AuthStatusResponse, status)['userEmail'] == email and status['serverUrl'] == self.cli.get_server():
       # already logged in
-      self.unlock(ask_master_password(email))
-      return self._login_unlock_session(logout=False)
+      login_context = self.as_logged_in()
+      password = ask_master_password()
     else:
       # not logged in or logged in as wrong user
       creds = ask_email_credentials(email)
-      self.login(creds)
-      self.unlock(creds['password'])
-      return self._login_unlock_session(logout=True)    
+      login_context = self.login(creds)
+      password = creds['password']
 
-  @contextmanager
-  def _login_unlock_session(self, logout: bool):
-    try:
-      yield
-    finally:
-      self.lock()
-      if logout:
-        self.logout()
+    with login_context as a:
+      with a.unlock(password) as b:
+        yield b
 
 
-  def get_items(self):
-    return self.api.get_items()
+  def status(self) -> StatusResponse:
+    return self.cli.status()
+    
+  def is_logged_in(self, status: StatusResponse|None = None) -> bool:
+    status = status or self.status()
+    return status['status'] != 'unauthenticated'
+
+  def is_locked(self, status: StatusResponse|None = None) -> bool:
+    status = status or self.status()
+    return status['status'] != 'unlocked'
