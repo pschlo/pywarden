@@ -1,13 +1,13 @@
 from __future__ import annotations
 from pywarden.cli import CliControl
-from pywarden.local_api import LocalApiControl
+from pywarden.api import ApiControl
 
 
 class UnlockedControl:
   cli: CliControl
-  api: LocalApiControl
+  api: ApiControl
 
-  def __init__(self, cli: CliControl, api: LocalApiControl) -> None:
+  def __init__(self, cli: CliControl, api: ApiControl) -> None:
     self.cli = cli
     self.api = api
 

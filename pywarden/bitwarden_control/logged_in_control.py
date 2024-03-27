@@ -4,16 +4,16 @@ from contextlib import contextmanager
 from typing import Any
 from collections.abc import Iterator
 from pywarden.cli import CliControl
-from pywarden.local_api import LocalApiControl
-from .local_api_config import ApiConfig
+from pywarden.api import ApiControl
+from .config import ApiConfig
 from .unlocked_control import UnlockedControl
 
 
 class LoggedInControl:
   cli: CliControl
-  api: LocalApiControl
+  api: ApiControl
 
-  def __init__(self, cli: CliControl, api: LocalApiControl) -> None:
+  def __init__(self, cli: CliControl, api: ApiControl) -> None:
     self.cli = cli
     self.api = api
 
@@ -21,7 +21,7 @@ class LoggedInControl:
   def create(cli: CliControl, api_conf: ApiConfig) -> LoggedInControl:
     print(f"Starting API server")
     proc = cli.serve_api(host=api_conf.hostname, port=api_conf.port)
-    api = LocalApiControl.create(proc, host=api_conf.hostname, port=api_conf.port)
+    api = ApiControl.create(proc, host=api_conf.hostname, port=api_conf.port)
     api.wait_until_ready(timeout_secs=api_conf.startup_timeout_secs)
     return LoggedInControl(cli, api)
 

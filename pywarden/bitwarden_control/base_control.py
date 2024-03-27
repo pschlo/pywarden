@@ -5,9 +5,9 @@ from contextlib import contextmanager
 
 from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, EmailCredentials
 from pywarden.utils import ask_email_credentials, ask_master_password
-from .local_api_config import ApiConfig
-from .cli_config import CliConfig
-from .logged_in_control import LoggedInControl, UnlockedControl
+from .config import CliConfig, ApiConfig
+from .logged_in_control import LoggedInControl
+from .unlocked_control import UnlockedControl
 
 
 """
