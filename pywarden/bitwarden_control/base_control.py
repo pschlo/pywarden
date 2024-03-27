@@ -21,7 +21,7 @@ class BitwardenControl:
     self.cli = cli
     self.api_conf = api_conf
 
-    self.get_export = self.cli.get_export
+    self.status = self.cli.status
 
 
   @staticmethod
@@ -83,10 +83,6 @@ class BitwardenControl:
     with login_context as a:
       with a.unlock(password) as b:
         yield b
-
-
-  def status(self) -> StatusResponse:
-    return self.cli.status()
     
   def is_logged_in(self, status: StatusResponse|None = None) -> bool:
     status = status or self.status()

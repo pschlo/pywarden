@@ -17,6 +17,8 @@ class LoggedInControl:
     self.cli = cli
     self.api = api
 
+    self.status = self.api.status
+
   @staticmethod
   def create(cli: CliControl, api_conf: ApiConfig) -> LoggedInControl:
     print(f"Starting API server")
