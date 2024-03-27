@@ -38,10 +38,16 @@ class LoggedInControl:
   @contextmanager
   def unlock(self, password: str) -> Iterator[UnlockedControl]:
     print(f"Unlocking vault")
+
     try:
       key = self.api.unlock(password)
       self.cli.session_key = key
       c = UnlockedControl(self.cli, self.api)
+    finally:
+      self.api.lock()
+      self.cli.lock()
+
+    try:
       yield c
     finally:
       c.lock()

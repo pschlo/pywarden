@@ -24,3 +24,4 @@ class UnlockedControl:
   def lock(self) -> None:
     print(f"Locking vault")
     self.api.lock()
+    self.cli.lock()

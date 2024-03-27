@@ -90,4 +90,5 @@ class ApiControl:
         break
       time.sleep(0.1)
     else:
+      self.shutdown(timeout_secs)
       raise TimeoutError(f"API server failed to start after {timeout_secs} seconds")

@@ -38,9 +38,14 @@ class BitwardenControl:
   def login(self, creds: EmailCredentials) -> Iterator[LoggedInControl]:
     status = self.status()
     print(f"Logging in as {creds['email']} at {self.cli.get_server()}")
+
     try:
       self.cli.login(creds, status)
       c = LoggedInControl.create(self.cli, self.api_conf)
+    finally:
+      self.cli.logout()
+
+    try:
       yield c
     finally:
       c.stop_api()
@@ -48,8 +53,8 @@ class BitwardenControl:
 
   @contextmanager
   def as_logged_in(self) -> Iterator[LoggedInControl]:
+    c = LoggedInControl.create(self.cli, self.api_conf)
     try:
-      c = LoggedInControl.create(self.cli, self.api_conf)
       yield c
     finally:
       c.stop_api()
