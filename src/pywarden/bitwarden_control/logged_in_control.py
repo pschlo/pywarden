@@ -61,7 +61,7 @@ class LoggedInControl:
       self.cli.session_key = key
       c = UnlockedControl(self.cli, self.api)
     except:
-      try: self.api.lock
+      try: self.api.lock()
       except Exception as e: print(f"{e.__class__.__name__}: {e}")
       try: self.cli.lock()
       except Exception as e: print(f"{e.__class__.__name__}: {e}")
@@ -71,3 +71,7 @@ class LoggedInControl:
       yield c
     finally:
       c.lock()
+
+  @contextmanager
+  def as_unlocked(self) -> Iterator[UnlockedControl]:
+    yield UnlockedControl(self.cli, self.api)

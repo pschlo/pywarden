@@ -105,3 +105,10 @@ class BitwardenControl:
   def is_locked(self, status: StatusResponse|None = None) -> bool:
     status = status or self.status()
     return status['status'] != 'unlocked'
+  
+  @contextmanager
+  def with_session_key(self, key: str) -> Iterator[UnlockedControl]:
+    self.cli.session_key = key
+    with self.as_logged_in() as c:
+      with c.as_unlocked() as u:
+        yield u
