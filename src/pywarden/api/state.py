@@ -4,4 +4,6 @@ from dataclasses import dataclass
 
 @dataclass
 class ApiState:
-  pass
+  host: str
+  port: int
+  scheme: str = 'http'

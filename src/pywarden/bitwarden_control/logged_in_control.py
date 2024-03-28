@@ -30,6 +30,19 @@ class LoggedInControl:
     self.api = api
     self.status = self.api.status
 
+  @property
+  def data_dir(self):
+    return self.cli.data_dir
+  @property
+  def cli_path(self):
+    return self.cli.cli_path
+  @property
+  def api_hostname(self):
+    return self.api.hostname
+  @property
+  def api_port(self):
+    return self.api.port
+
 
   def logout(self) -> None:
     print(f"Logging out")

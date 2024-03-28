@@ -50,8 +50,11 @@ class ApiControl:
 
   @staticmethod
   def create(process: Popen, host: str, port: int) -> ApiControl:
-    state = ApiState()
-    conn = ApiConnection(state, scheme='http', host=host, port=port)
+    state = ApiState(
+      host=host,
+      port=port
+    )
+    conn = ApiConnection(state)
     return ApiControl(
       process=process,
       state=state,
@@ -60,6 +63,13 @@ class ApiControl:
       misc_service = MiscService(conn),
       auth_service = AuthService(conn)
     )
+  
+  @property
+  def hostname(self) -> str:
+    return self.state.host
+  @property
+  def port(self) -> int:
+    return self.state.port
 
   def is_reachable(self) -> bool:
     try:

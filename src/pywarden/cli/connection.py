@@ -21,14 +21,12 @@ class CliConnection:
 
 
   def get_env(self) -> dict[str,str]:
-    env: dict[str,str] = dict()
-
+    env: dict[str,str] = os.environ.copy()
     if self.state.session_key is not None:
       env['BW_SESSION'] = self.state.session_key
     if self.state.data_dir is not None:
       env['BITWARDENCLI_APPDATA_DIR'] = str(self.state.data_dir)
-    
-    return os.environ.copy() | env
+    return env
 
 
   @overload

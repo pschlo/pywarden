@@ -90,20 +90,12 @@ class CliControl:
   @session_key.setter
   def session_key(self, value: str) -> None:
     self.state.session_key = value
-
   @property
   def cli_path(self) -> Path:
     return self.state.cli_path
-  @cli_path.setter
-  def cli_path(self, value: Path) -> None:
-    self.state.cli_path = value
-
   @property
   def data_dir(self) -> Path|None:
     return self.state.data_dir
-  @data_dir.setter
-  def data_dir(self, value: Path) -> None:
-    self.state.data_dir = value
   
 
   def formatted_status(self, status: StatusResponse|None = None) -> str:

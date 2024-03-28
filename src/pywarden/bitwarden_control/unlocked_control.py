@@ -1,4 +1,6 @@
 from __future__ import annotations
+from pathlib import Path
+
 from pywarden.cli import CliControl
 from pywarden.api import ApiControl
 
@@ -20,6 +22,25 @@ class UnlockedControl:
     self.delete_attachment = self.api.delete_attachment
 
     self.get_export = self.cli.get_export
+
+  @property
+  def data_dir(self):
+    return self.cli.data_dir
+  @property
+  def cli_path(self):
+    return self.cli.cli_path
+  @property
+  def api_hostname(self):
+    return self.api.hostname
+  @property
+  def api_port(self):
+    return self.api.port
+  @property
+  def session_key(self) -> str:
+    key = self.cli.session_key
+    assert key is not None
+    return key
+  
 
   def lock(self) -> None:
     print(f"Locking vault")

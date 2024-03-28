@@ -31,6 +31,14 @@ class BitwardenControl:
     self.cli = cli
     self.api_conf = api
     self.status = self.cli.status
+
+
+  @property
+  def data_dir(self):
+    return self.cli.data_dir
+  @property
+  def cli_path(self):
+    return self.cli.cli_path
   
 
   @contextmanager

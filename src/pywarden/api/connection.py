@@ -13,15 +13,9 @@ type Files = dict[str,tuple[str, str|bytes]]
 
 class ApiConnection:
   state: ApiState
-  scheme: str
-  host: str
-  port: int
 
-  def __init__(self, state: ApiState, scheme: str, host: str, port: int) -> None:
+  def __init__(self, state: ApiState) -> None:
     self.state = state
-    self.scheme = scheme
-    self.host = host
-    self.port = port
 
   def _send_request(
       self,
@@ -32,7 +26,7 @@ class ApiConnection:
       json: Any|None = None,
       files: Files|None = None,
   ) -> Response:
-    url = f'{self.scheme}://{self.host}:{self.port}{route}'
+    url = f'{self.state.scheme}://{self.state.host}:{self.state.port}{route}'
     resp = requests.request(method, url, params=params, json=json, data=data, files=files)
     if not resp.ok:
       print(f"ERROR ({resp.status_code}): {resp.reason}")
