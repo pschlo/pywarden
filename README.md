@@ -23,11 +23,11 @@ Each data directory represents a different Bitwarden client. When no data direct
 
 There are three basic classes to control a Bitwarden client. Each represents a view on the Bitwarden client with a certain permission level:
 
-* `BitwardenControl`: unauthenticated view of the Bitwarden client. Has several methods that can be used in a `with` statement to obtain `LoggedInControl` or `UnlockedControl` objects.
-* `LoggedInControl`: authenticated, but locked view of the Bitwarden client. Has several methods that can be used in a `with` statement to obtain an `UnlockedControl`.
-* `UnlockedControl`: authenticated and unlocked view of Bitwarden client.
+* `BaseBwControl`: unauthenticated view of the Bitwarden client. Has several methods that can be used in a `with` statement to obtain `LoggedInBwControl` or `UnlockedBwControl` objects.
+* `LoggedInBwControl`: authenticated, but locked view of the Bitwarden client. Has several methods that can be used in a `with` statement to obtain an `UnlockedBwControl`.
+* `UnlockedBwControl`: authenticated and unlocked view of Bitwarden client.
 
-It is perfectly valid to use a control with less permission than the client, but using a control with more permission is invalid will fail eventually. You should always start with a `BitwardenControl` (least permissions), and use its context manager methods to get more permissive control objects. Dependent on which context manager is used, they will ensure that the client is locked and logged out, and that the API process is stopped.
+It is perfectly valid to use a control with less permission than the client, but using a control with more permission is invalid will fail eventually. You should always start with a `BaseBwControl` (least permissions), and use its context manager methods to get more permissive control objects. Dependent on which context manager is used, they will ensure that the client is locked and logged out, and that the API process is stopped. You can pass `CliConfig` and `ApiConfig` instances to `BaseBwControl` to customize its behaviour (e.g. use a different client/data directory). Make sure to specify the path to your Bitwarden CLI executable if it is not named `bw` and in `PATH`.
 
 
 ## Examples
@@ -35,10 +35,10 @@ It is perfectly valid to use a control with less permission than the client, but
 Example:
 
 ```python
-from pywarden import BitwardenControl, CliConfig, ApiConfig, is_item_type, LoginItem
+from pywarden import BaseBwControl, is_item_type, LoginItem
 
-with BitwardenControl(CliConfig(), ApiConfig()).login_unlock_interactive() as ctl:
-  for item in ctl.get_items():
+with BaseBwControl().login_unlock_interactive() as bw:
+  for item in bw.get_items():
     print(item['name'])
     if is_item_type(item, LoginItem):
       print(f"  Username: {item['login']['username']}")
