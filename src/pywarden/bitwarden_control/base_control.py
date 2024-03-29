@@ -6,23 +6,26 @@ from contextlib import contextmanager
 from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, EmailCredentials
 from pywarden.utils import ask_email_credentials, ask_master_password
 from .config import CliConfig, ApiConfig
-from .logged_in_control import LoggedInControl
-from .unlocked_control import UnlockedControl
+from .logged_in_control import LoggedInBwControl
+from .unlocked_control import UnlockedBwControl
 
 
 """
 api property is set iff api server running iff logged in
 """
-class BitwardenControl:
+class BaseBwControl:
   cli: CliControl
   api_conf: ApiConfig
 
 
   @overload
-  def __init__(self, cli: CliConfig, api: ApiConfig): ...
+  def __init__(self, cli: CliConfig|None = None, api: ApiConfig|None = None): ...
   @overload
-  def __init__(self, cli: CliControl, api: ApiConfig): ...
-  def __init__(self, cli: CliControl|CliConfig, api: ApiConfig) -> None:
+  def __init__(self, cli: CliControl, api: ApiConfig|None = None): ...
+  def __init__(self, cli: CliControl|CliConfig|None = None, api: ApiConfig|None = None) -> None:
+    cli = cli or CliConfig()
+    api = api or ApiConfig()
+
     if isinstance(cli, CliConfig):
       conf = cli
       print("Creating CLI control")
@@ -42,13 +45,13 @@ class BitwardenControl:
   
 
   @contextmanager
-  def login(self, creds: EmailCredentials) -> Iterator[LoggedInControl]:
+  def login(self, creds: EmailCredentials) -> Iterator[LoggedInBwControl]:
     status = self.status()
     print(f"Logging in as {creds['email']} at {self.cli.get_server()}")
 
     try:
       self.cli.login(creds, status)
-      c = LoggedInControl(self.cli, self.api_conf)
+      c = LoggedInBwControl(self.cli, self.api_conf)
     except:
       try: self.cli.logout()
       except Exception as e: print(f"{e.__class__.__name__}: {e}")
@@ -61,21 +64,21 @@ class BitwardenControl:
       c.logout()
 
   @contextmanager
-  def as_logged_in(self) -> Iterator[LoggedInControl]:
-    c = LoggedInControl(self.cli, self.api_conf)
+  def as_logged_in(self) -> Iterator[LoggedInBwControl]:
+    c = LoggedInBwControl(self.cli, self.api_conf)
     try:
       yield c
     finally:
       c.stop_api()
   
   @contextmanager
-  def login_unlock(self, creds: EmailCredentials, password: str) -> Iterator[UnlockedControl]:
+  def login_unlock(self, creds: EmailCredentials, password: str) -> Iterator[UnlockedBwControl]:
     with self.login(creds) as a:
       with a.unlock(password) as b:
         yield b
 
   @contextmanager
-  def login_unlock_interactive(self, email: str|None = None) -> Iterator[UnlockedControl]:
+  def login_unlock_interactive(self, email: str|None = None) -> Iterator[UnlockedBwControl]:
     status = self.status()
 
     if email is None:
@@ -107,7 +110,7 @@ class BitwardenControl:
     return status['status'] != 'unlocked'
   
   @contextmanager
-  def with_session_key(self, key: str) -> Iterator[UnlockedControl]:
+  def with_session_key(self, key: str) -> Iterator[UnlockedBwControl]:
     self.cli.session_key = key
     with self.as_logged_in() as c:
       with c.as_unlocked() as u:

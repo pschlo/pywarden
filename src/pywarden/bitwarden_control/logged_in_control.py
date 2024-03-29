@@ -6,10 +6,10 @@ from collections.abc import Iterator
 from pywarden.cli import CliControl
 from pywarden.api import ApiControl
 from .config import ApiConfig
-from .unlocked_control import UnlockedControl
+from .unlocked_control import UnlockedBwControl
 
 
-class LoggedInControl:
+class LoggedInBwControl:
   cli: CliControl
   api: ApiControl
 
@@ -53,13 +53,13 @@ class LoggedInControl:
     self.api.shutdown()
 
   @contextmanager
-  def unlock(self, password: str) -> Iterator[UnlockedControl]:
+  def unlock(self, password: str) -> Iterator[UnlockedBwControl]:
     print(f"Unlocking vault")
 
     try:
       key = self.api.unlock(password)
       self.cli.session_key = key
-      c = UnlockedControl(self.cli, self.api)
+      c = UnlockedBwControl(self.cli, self.api)
     except:
       try: self.api.lock()
       except Exception as e: print(f"{e.__class__.__name__}: {e}")
@@ -73,5 +73,5 @@ class LoggedInControl:
       c.lock()
 
   @contextmanager
-  def as_unlocked(self) -> Iterator[UnlockedControl]:
-    yield UnlockedControl(self.cli, self.api)
+  def as_unlocked(self) -> Iterator[UnlockedBwControl]:
+    yield UnlockedBwControl(self.cli, self.api)

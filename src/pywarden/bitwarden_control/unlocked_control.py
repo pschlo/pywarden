@@ -5,7 +5,7 @@ from pywarden.cli import CliControl
 from pywarden.api import ApiControl
 
 
-class UnlockedControl:
+class UnlockedBwControl:
   cli: CliControl
   api: ApiControl
 
