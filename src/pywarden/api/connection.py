@@ -2,9 +2,12 @@ from __future__ import annotations
 from typing import Any
 import requests
 from requests import Response
+import logging
 
 from .state import ApiState
 
+
+log = logging.getLogger(__name__)
 
 Params = dict[str, Any]
 Body = Any
@@ -29,8 +32,8 @@ class ApiConnection:
     url = f'{self.state.scheme}://{self.state.host}:{self.state.port}{route}'
     resp = requests.request(method, url, params=params, json=json, data=data, files=files)
     if not resp.ok:
-      print(f"ERROR ({resp.status_code}): {resp.reason}")
-      print(f"{resp.json()}")
+      log.error(f"ERROR ({resp.status_code}): {resp.reason}")
+      log.error(f"{resp.json()}")
     resp.raise_for_status()
     return resp
 

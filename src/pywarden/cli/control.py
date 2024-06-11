@@ -1,12 +1,16 @@
 from __future__ import annotations
 from typing import Any, cast
 from pathlib import Path
+import logging
 
 from .services import AuthService, ImportExportService, MiscService, ApiService, ConfigService
 from .connection import CliConnection
 from pywarden.login_credentials import EmailCredentials
 from pywarden.constants import StatusResponse, AuthStatusResponse, DEFAULT_SERVER
 from .state import CliState
+
+
+log = logging.getLogger(__name__)
 
 
 class CliControl:
@@ -42,7 +46,7 @@ class CliControl:
     # apply config stuff
     self.set_server(server)
 
-    print(self.formatted_status())
+    log.info(self.formatted_status())
 
 
   def is_logged_in(self, status: StatusResponse|None = None):
@@ -57,7 +61,7 @@ class CliControl:
   def login(self, creds: EmailCredentials, status: StatusResponse|None = None):
     status = status or self.status()
     if self.is_logged_in(status):
-      print(f"Already authenticated, logging out and back in")
+      log.info(f"Already authenticated, logging out and back in")
       self.logout()
     self._auth_service.login(creds)
 
@@ -77,7 +81,7 @@ class CliControl:
     status = status or self.status()
     # can only change server if not logged in
     if url != status['serverUrl'] and self.is_logged_in(status):
-      print(f"Cannot change server to {url} when logged in, logging out")
+      log.info(f"Cannot change server to {url} when logged in, logging out")
       self.logout()
     self._config_service.set_server(url)
 

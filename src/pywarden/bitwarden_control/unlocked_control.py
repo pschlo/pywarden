@@ -1,8 +1,11 @@
 from __future__ import annotations
-from pathlib import Path
+import logging
 
 from pywarden.cli import CliControl
 from pywarden.api import ApiControl
+
+
+log = logging.getLogger(__name__)
 
 
 class UnlockedBwControl:
@@ -43,6 +46,6 @@ class UnlockedBwControl:
   
 
   def lock(self) -> None:
-    print(f"Locking vault")
+    log.info(f"Locking vault")
     self.api.lock()
     self.cli.lock()

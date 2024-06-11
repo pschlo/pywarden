@@ -2,10 +2,14 @@ from __future__ import annotations
 import requests
 from subprocess import Popen, TimeoutExpired, CompletedProcess
 import time
+import logging
 
 from .services import AttachmentsService, ItemsService, MiscService, AuthService
 from .connection import ApiConnection
 from .state import ApiState
+
+
+log = logging.getLogger(__name__)
 
 
 class ApiControl:
@@ -94,7 +98,7 @@ class ApiControl:
     while timeout_secs is None or time.perf_counter() - t0 < timeout_secs:
       if not self.is_alive():
         _, stderr = self.process.communicate()
-        print(stderr)
+        log.error(stderr)
         raise TimeoutError(f"API server process is dead")
       if self.is_reachable():
         break

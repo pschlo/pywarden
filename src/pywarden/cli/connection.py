@@ -1,12 +1,15 @@
 from __future__ import annotations
 from subprocess import Popen, PIPE, CompletedProcess, CalledProcessError
-from pathlib import Path
+import logging
 from typing import Any, overload, Literal
 from collections.abc import Sequence
 import os
 
 from pywarden.constants import StatusResponse
 from .state import CliState
+
+
+log = logging.getLogger(__name__)
 
 
 """
@@ -65,7 +68,7 @@ class CliConnection:
       r.check_returncode()
     except CalledProcessError:
       msg = r.stderr.decode().splitlines()[-1]  # only consider last line. Previous lines are sometimes leftover from input prompt.
-      print(f"ERROR: {msg}")
+      log.error(msg)
       raise
 
     return r

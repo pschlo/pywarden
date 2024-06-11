@@ -2,12 +2,16 @@ from __future__ import annotations
 from typing import Any, cast, overload
 from collections.abc import Iterator
 from contextlib import contextmanager
+import logging
 
 from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, EmailCredentials
 from pywarden.utils import ask_email_credentials, ask_master_password
 from .config import CliConfig, ApiConfig
 from .logged_in_control import LoggedInBwControl
 from .unlocked_control import UnlockedBwControl
+
+
+log = logging.getLogger(__name__)
 
 
 """
@@ -28,7 +32,7 @@ class BaseBwControl:
 
     if isinstance(cli, CliConfig):
       conf = cli
-      print("Creating CLI control")
+      log.info("Creating CLI control")
       cli = CliControl.create(cli_path=conf.cli_path, data_dir=conf.data_dir, server=conf.server)
 
     self.cli = cli
@@ -47,14 +51,14 @@ class BaseBwControl:
   @contextmanager
   def login(self, creds: EmailCredentials) -> Iterator[LoggedInBwControl]:
     status = self.status()
-    print(f"Logging in as {creds['email']} at {self.cli.get_server()}")
+    log.info(f"Logging in as {creds['email']} at {self.cli.get_server()}")
 
     try:
       self.cli.login(creds, status)
       c = LoggedInBwControl(self.cli, self.api_conf)
     except:
       try: self.cli.logout()
-      except Exception as e: print(f"{e.__class__.__name__}: {e}")
+      except Exception as e: log.error(f"{e.__class__.__name__}: {e}")
       raise
 
     try:
