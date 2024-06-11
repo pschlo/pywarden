@@ -6,9 +6,9 @@ from requests import Response
 from .state import ApiState
 
 
-type Params = dict[str, Any]
-type Body = Any
-type Files = dict[str,tuple[str, str|bytes]]
+Params = dict[str, Any]
+Body = Any
+Files = dict[str,tuple[str, str|bytes]]
 
 
 class ApiConnection:
