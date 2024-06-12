@@ -3,6 +3,8 @@ from typing import Any, cast, overload
 from collections.abc import Iterator
 from contextlib import contextmanager
 import logging
+import shutil
+from pathlib import Path
 
 from pywarden.cli import CliControl, StatusResponse, AuthStatusResponse, EmailCredentials
 from pywarden.utils import ask_email_credentials, ask_master_password
@@ -33,6 +35,12 @@ class BaseBwControl:
     if isinstance(cli, CliConfig):
       conf = cli
       log.info("Creating CLI control")
+      if conf.cli_path is None:
+        # search in PATH
+        r = shutil.which('bw')
+        if r is None:
+          raise ValueError(f'Could not locate Bitwarden CLI executable')
+        conf.cli_path = Path(r)
       cli = CliControl.create(cli_path=conf.cli_path, data_dir=conf.data_dir, server=conf.server)
 
     self.cli = cli

@@ -121,7 +121,7 @@ class CliControl:
   @staticmethod
   def create(cli_path: Path, server: str = DEFAULT_SERVER, session_key: str|None = None, data_dir: Path|None = None) -> CliControl:
     state = CliState(
-      cli_path = cli_path,
+      cli_path = cli_path.resolve(),
       session_key = session_key,
       data_dir = data_dir
     )
