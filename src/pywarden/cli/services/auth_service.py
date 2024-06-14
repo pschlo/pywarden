@@ -2,7 +2,6 @@ from typing import Any, cast
 
 from ..service import Service
 from ...login_credentials import EmailCredentials
-from pywarden.constants import StatusResponse, AuthStatusResponse
 
 
 class AuthService(Service):
