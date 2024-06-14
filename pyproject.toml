@@ -11,7 +11,9 @@ authors = [
 description = "Bitwarden CLI/API wrapper"
 readme = "README.md"
 requires-python = ">=3.10"
-
+dependencies = [
+  "requests"
+]
 
 [tool.hatch.build.targets.sdist]
 # choose here what to include in sdist
