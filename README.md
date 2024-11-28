@@ -5,7 +5,7 @@ Typed Python wrapper around the Bitwarden CLI and its Vault Management API.
 This package is not currently uploaded to PyPI. Install as follows:
 
 1. Find your release of choice [here](https://github.com/pschlo/pywarden/releases)
-2. Copy the link to `number_conversion-x.x.x.tar.gz`
+2. Copy the link to `pywarden-x.x.x.tar.gz`
 3. Run `python -m pip install {link}`
 
 You may also prepend a [direct reference](https://peps.python.org/pep-0440/#direct-references), which might be desirable for a `requirements.txt`.
