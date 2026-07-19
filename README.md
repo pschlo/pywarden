@@ -14,13 +14,13 @@ executable; uv manages only the Python package and its dependencies.
 Add the current GitHub version to a uv project:
 
 ```console
-uv add "pywarden @ git+https://github.com/pschlo/pywarden.git"
+uv add "pywarden @ https://github.com/pschlo/pywarden/archive/refs/heads/main.zip"
 ```
 
 Without uv, pip also accepts the GitHub reference:
 
 ```console
-python -m pip install "pywarden @ git+https://github.com/pschlo/pywarden.git"
+python -m pip install "pywarden @ https://github.com/pschlo/pywarden/archive/refs/heads/main.zip"
 ```
 
 ## Use
