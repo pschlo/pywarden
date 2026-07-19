@@ -5,8 +5,8 @@ from ..item import Item
 
 
 class SecureNoteItem(Item):
-  secureNote: SecureNoteData
+    secureNote: SecureNoteData
 
 
 class SecureNoteData(TypedDict):
-  type: int
+    type: int

@@ -1,9 +1,8 @@
-
 from .connection import CliConnection
 
 
 class Service:
-  conn: CliConnection
+    conn: CliConnection
 
-  def __init__(self, conn: CliConnection) -> None:
-    self.conn = conn
+    def __init__(self, conn: CliConnection) -> None:
+        self.conn = conn

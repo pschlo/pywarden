@@ -4,7 +4,7 @@ from ..connection import ApiConnection
 
 
 class Service(ABC):
-  conn: ApiConnection
+    conn: ApiConnection
 
-  def __init__(self, conn: ApiConnection) -> None:
-    self.conn = conn
+    def __init__(self, conn: ApiConnection) -> None:
+        self.conn = conn

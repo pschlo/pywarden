@@ -4,19 +4,31 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pywarden"
-version = "1.1.6"
+version = "1.2.0"
 authors = [
-  { name="pschlo", email="author@example.com" },
+  { name = "pschlo", email = "70105856+pschlo@users.noreply.github.com" },
 ]
 description = "Bitwarden CLI/API wrapper"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "requests"
+  "requests>=2.32.5",
 ]
 
-[tool.hatch.build.targets.sdist]
-# choose here what to include in sdist
-# the wheel will only include src/pywarden anyway
-# see https://discuss.python.org/t/should-sdists-include-docs-and-tests/14578
-# include = [ ]
+[dependency-groups]
+dev = [
+  "pytest>=8.4",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pywarden"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "F403"]

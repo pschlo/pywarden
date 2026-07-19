@@ -5,15 +5,16 @@ from ..item import Item
 
 
 class LoginItem(Item):
-  login: LoginData
+    login: LoginData
 
 
 class LoginData(TypedDict):
-  uris: list[Uris]
-  username: str
-  password: str
-  totp: str
+    uris: list[Uris]
+    username: str
+    password: str
+    totp: str
+
 
 class Uris(TypedDict):
-  match: int
-  uri: str
+    match: int
+    uri: str

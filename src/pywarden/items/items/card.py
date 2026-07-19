@@ -5,13 +5,13 @@ from ..item import Item
 
 
 class CardItem(Item):
-  card: CardData
+    card: CardData
 
 
 class CardData(TypedDict):
-  cardholderName: str
-  brand: str
-  number: str
-  expMonth: str
-  expYear: str
-  code: str
+    cardholderName: str
+    brand: str
+    number: str
+    expMonth: str
+    expYear: str
+    code: str

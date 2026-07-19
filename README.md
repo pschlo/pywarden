@@ -1,56 +1,60 @@
-# pywarden
-Typed Python wrapper around the Bitwarden CLI and its Vault Management API.
+# Pywarden
 
-## Installation
-This package is not currently uploaded to PyPI. Install as follows:
+Typed Python wrapper around the Bitwarden CLI and its local Vault Management
+API.
 
-1. Find your release of choice [here](https://github.com/pschlo/pywarden/releases)
-2. Copy the link to `pywarden-x.x.x.tar.gz`
-3. Run `python -m pip install {link}`
+## Requirements
 
-You may also prepend a [direct reference](https://peps.python.org/pep-0440/#direct-references), which might be desirable for a `requirements.txt`.
+Install the official [Bitwarden CLI](https://bitwarden.com/help/cli/) and make
+sure the `bw` executable is available in `PATH`. Pywarden controls that local
+executable; uv manages only the Python package and its dependencies.
 
+## Install
 
-## Building
-The `.tar.gz` file in a release is the [source distribution](https://packaging.python.org/en/latest/glossary/#term-Source-Distribution-or-sdist), which was created from the source code with `python3 -m build --sdist`. [Built distributions](https://packaging.python.org/en/latest/glossary/#term-Built-Distribution)
-are not provided.
+Add the current GitHub version to a uv project:
 
-
-
-## Introduction
-
-Each data directory represents a different Bitwarden client. When no data directory is specified, the default Bitwarden CLI directory is used.
-
-There are three basic classes to control a Bitwarden client. Each represents a view on the Bitwarden client with a certain permission level:
-
-* `BaseBwControl`: unauthenticated view of the Bitwarden client. Has several methods that can be used in a `with` statement to obtain `LoggedInBwControl` or `UnlockedBwControl` objects.
-* `LoggedInBwControl`: authenticated, but locked view of the Bitwarden client. Has several methods that can be used in a `with` statement to obtain an `UnlockedBwControl`.
-* `UnlockedBwControl`: authenticated and unlocked view of Bitwarden client.
-
-It is perfectly valid to use a control with less permission than the client, but using a control with more permission is invalid will fail eventually. You should always start with a `BaseBwControl` (least permissions), and use its context manager methods to get more permissive control objects. Dependent on which context manager is used, they will ensure that the client is locked and logged out, and that the API process is stopped. You can pass `CliConfig` and `ApiConfig` instances to `BaseBwControl` to customize its behaviour (e.g. use a different client/data directory). Make sure to specify the path to your Bitwarden CLI executable if it is not named `bw` and in `PATH`.
-
-
-## Examples
-
-Example:
-
-```python
-from pywarden import BaseBwControl, is_item_type, LoginItem
-
-with BaseBwControl().login_unlock_interactive() as bw:
-  for item in bw.get_items():
-    print(item['name'])
-    if is_item_type(item, LoginItem):
-      print(f"  Username: {item['login']['username']}")
-      print(f"  Password: {item['login']['password']}")
+```console
+uv add "pywarden @ git+https://github.com/pschlo/pywarden.git"
 ```
 
-This will:
+Without uv, pip also accepts the GitHub reference:
 
-* prompt the user for their login/unlock data
-* if necessary, log into Bitwarden account
-* unlock vault
-* print all item names
-* for each login item, also print username and password
-* lock the vault
-* if we had to log in previously, log back out
+```console
+python -m pip install "pywarden @ git+https://github.com/pschlo/pywarden.git"
+```
+
+## Use
+
+Each data directory represents a separate Bitwarden CLI client. Without an
+explicit directory, Pywarden uses the CLI's default data directory.
+
+Start with `BaseBwControl`, then use its context managers to obtain logged-in
+or unlocked controls. The context managers lock the vault, log out sessions they
+created, and stop the local API process when leaving their scope.
+
+```python
+from pywarden import BaseBwControl, LoginItem, is_item_type
+
+with BaseBwControl().login_unlock_interactive() as vault:
+    for item in vault.get_items():
+        print(item["name"])
+        if is_item_type(item, LoginItem):
+            print(f"  Username: {item['login']['username']}")
+```
+
+Pass `CliConfig` or `ApiConfig` to customize the CLI path, data directory,
+server, local API hostname, port, and startup timeout.
+
+The local API binds to `localhost` by default. Avoid exposing an unlocked vault
+API to other machines.
+
+## Development
+
+```console
+uv sync
+uv run pytest
+uv build
+```
+
+The tests use fake API/process objects and temporary subprocesses. They do not
+invoke `bw`, prompt for credentials, access a vault, or send network requests.
